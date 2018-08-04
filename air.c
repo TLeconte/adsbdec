@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015 Thierry Leconte
+ *  Copyright (c) 2018 Thierry Leconte
  *
  *   
  *   This code is free software; you can redistribute it and/or modify
