@@ -1,3 +1,21 @@
+/*
+ *  Copyright (c) 2018 Thierry Leconte
+ *
+ *   
+ *   This code is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU Library General Public License version 2
+ *   published by the Free Software Foundation.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Library General Public License for more details.
+ *
+ *   You should have received a copy of the GNU Library General Public
+ *   License along with this library; if not, write to the Free Software
+ *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -5,6 +23,8 @@
 #include <signal.h>
 
 extern char *Rawaddr;
+extern int outformat;
+
 extern int gain;
 
 char *filename = NULL;
@@ -45,12 +65,13 @@ static int fileInput(char *filename)
 static void usage(void)
 {
 	printf("adsbdec airspy ADSB decoder Copyright (c) 2018 Thierry Leconte  \n\n");
-	printf("usage : adsbdec [-d] [-e] [-f filename] [-s addr[:port]]\n\n");
+	printf("usage : adsbdec [-d] [-e] [-m] [-f filename] [-s addr[:port]]\n\n");
 	printf
 	    ("By default receive samples from airspy and output DF11/17/18 adsb frames in raw avr format on stdout\n");
 	printf("Options :\n");
 	printf("\t-d : don't output DF11 frames\n");
 	printf("\t-e : don't use 1bit error correction\n");
+	printf("\t-m : output avrmlat format (ie : with 12Mhz timestamp)\n");
 	printf("\t-f : input from filename instead of airspy (raw signed 16 bits IQ format)\n");
 	printf
 	    ("\t-s addr[:port] : send ouput via TCP to server at address addr:port (default port : 30001)\n");
@@ -69,7 +90,7 @@ int main(int argc, char **argv)
 	int c;
 	struct sigaction sigact;
 
-	while ((c = getopt(argc, argv, "f:s:g:de")) != EOF) {
+	while ((c = getopt(argc, argv, "f:s:g:dem")) != EOF) {
 		switch (c) {
 		case 'f':
 			filename = optarg;
@@ -85,6 +106,9 @@ int main(int argc, char **argv)
 			break;
 		case 'e':
 			errcorr = 0;
+			break;
+		case 'm':
+			outformat = 1;
 			break;
 		default:
 			usage();

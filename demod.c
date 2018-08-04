@@ -1,20 +1,39 @@
+/*
+ *  Copyright (c) 2018 Thierry Leconte
+ *
+ *   
+ *   This code is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU Library General Public License version 2
+ *   published by the Free Software Foundation.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Library General Public License for more details.
+ *
+ *   You should have received a copy of the GNU Library General Public
+ *   License along with this library; if not, write to the Free Software
+ *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ */
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 
 int df = 1;
 int errcorr = 1;
+int outformat = 0;
 
 extern unsigned int modesChecksum(const unsigned char *message, int n);
 extern unsigned int fixChecksum(unsigned char *message, unsigned int ecrc, int n);
 
-extern void netout(unsigned char *frame, int len);
+extern void netout(unsigned char *frame, int len, int outformat, unsigned long int ts);
 
 #define PULSEW 5
 #define APBUFFSZ 4096
 static float ampbuff[APBUFFSZ];
 
-static float pulseamp(int idx, int shp)
+static inline float pulseamp(int idx, int shp)
 {
 	float A;
 	float v[2 * PULSEW];
@@ -53,7 +72,7 @@ static void outpulse(int idx)
 }
 #endif
 
-static int validframe(unsigned char *frame, int len)
+static int validframe(unsigned char *frame, int len, unsigned long int ts)
 {
 	unsigned int crc;
 	unsigned int type;
@@ -90,12 +109,22 @@ static int validframe(unsigned char *frame, int len)
 		}
 	}
 
-	netout(frame, len);
+	netout(frame, len, outformat, ts);
 
 	return 1;
 }
 
-static int deqframe(int idx)
+static unsigned long int computetimestamp(float pv0, float pv1, float pv2, unsigned long int sc)
+{
+	double offset, tsf;
+
+	offset = (pv0 - pv2) / (pv0 + pv2 - 2 * pv1) / 2.0;
+	tsf = 12.0 * ((double)sc + offset) / 10.0;
+
+	return (unsigned long int)tsf;
+}
+
+static int deqframe(int idx, unsigned long int sc)
 {
 	static float pv0, pv1, pv2;
 
@@ -114,6 +143,7 @@ static int deqframe(int idx)
 		unsigned char bits = 0;
 		int k;
 		float ns;
+		unsigned long int ts = 0;
 
 		idx = (idx - 1 + APBUFFSZ) % APBUFFSZ;
 
@@ -123,6 +153,9 @@ static int deqframe(int idx)
 			return 1;
 		}
 
+		if (outformat)
+			ts = computetimestamp(pv0, pv1, pv2, sc - 1);
+
 		for (k = 0; k < 112; k++) {
 
 			if (k && k % 8 == 0) {
@@ -130,10 +163,11 @@ static int deqframe(int idx)
 				bits = 0;
 				flen++;
 
-				if (df && flen == 7)
-					if (validframe(frame, flen)) {
+				if (df && flen == 7) {
+					if (validframe(frame, flen, ts)) {
 						return 128 * PULSEW;
 					}
+				}
 			}
 
 			bits = bits << 1;
@@ -143,7 +177,7 @@ static int deqframe(int idx)
 		}
 		frame[flen] = bits;
 		flen++;
-		if (validframe(frame, flen)) {
+		if (validframe(frame, flen, ts)) {
 			return 240 * PULSEW;
 		}
 	}
@@ -151,6 +185,7 @@ static int deqframe(int idx)
 }
 
 static int inidx = 0;
+static unsigned long int samplecount = 0;
 static int needsample = 250 * PULSEW;
 void decodeiq(short *iq, int len)
 {
@@ -166,9 +201,13 @@ void decodeiq(short *iq, int len)
 		ampbuff[inidx] = amp;
 		inidx = (inidx + 1) % APBUFFSZ;
 
+		samplecount++;
+
 		needsample--;
 		if (needsample == 0)
-			needsample = deqframe((inidx - 250 * PULSEW + APBUFFSZ) % APBUFFSZ);
+			needsample =
+			    deqframe((inidx - 250 * PULSEW + APBUFFSZ) % APBUFFSZ,
+				     samplecount - 250 * PULSEW);
 	}
 
 }

@@ -1,3 +1,21 @@
+/*
+ *  Copyright (c) 2018 Thierry Leconte
+ *
+ *   
+ *   This code is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU Library General Public License version 2
+ *   published by the Free Software Foundation.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Library General Public License for more details.
+ *
+ *   You should have received a copy of the GNU Library General Public
+ *   License along with this library; if not, write to the Free Software
+ *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ */
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -5,8 +23,10 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <inttypes.h>
 
 char *Rawaddr = NULL;
+extern int outformat;
 
 static int sockfd = -1;
 
@@ -73,14 +93,21 @@ static int initNet(void)
 	return 0;
 }
 
-void netout(unsigned char *frame, int len)
+void netout(unsigned char *frame, int len, int outformat, unsigned long int ts)
 {
 	char pkt[50];
-	int i, res;
+	int i, o, res;
 
-	sprintf(pkt, "*");
+	if (outformat) {
+		sprintf(pkt, "@%012" PRIX64, ts & 0xffffffffffff);
+		o = 13;
+	} else {
+		sprintf(pkt, "*");
+		o = 1;
+	}
+
 	for (i = 0; i < len; i++) {
-		sprintf(&(pkt[2 * i + 1]), "%02X", frame[i]);
+		sprintf(&(pkt[2 * i + o]), "%02X", frame[i]);
 
 	}
 	strcat(pkt, ";\n");
