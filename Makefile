@@ -1,4 +1,4 @@
-CFLAGS= -Wall -Ofast -pthread -I.  `pkg-config --cflags libairspy`
+CFLAGS= -Wall -Ofast -march=native  -pthread -I.  `pkg-config --cflags libairspy`
 LIBS= -lm -pthread  `pkg-config --libs libairspy` -lusb-1.0
 
 
