@@ -131,13 +131,13 @@ static int deqframe(int idx, unsigned long int sc)
 	pv0 = pv1;
 	pv1 = pv2;
 
+	/* preamble matched filter */
 	pv2 =
-	    pulseamp(idx, 1) + pulseamp((idx + 2 * PULSEW) % APBUFFSZ,
-					1) + pulseamp((idx + 7 * PULSEW) % APBUFFSZ,
-						      1) + pulseamp((idx + 9 * PULSEW) % APBUFFSZ,
-								    1);
+	    pulseamp(idx, 1) + pulseamp((idx + 2 * PULSEW) % APBUFFSZ, 1) +
+	     pulseamp((idx + 7 * PULSEW) % APBUFFSZ, 1) + pulseamp((idx + 9 * PULSEW) % APBUFFSZ, 1);
 
-	if (pv1 >= pv0 && pv1 >= pv2) {
+	/* peak detection */
+	if (pv1 > pv0 && pv1 > pv2) {
 		unsigned char frame[14];
 		int flen = 0;
 		unsigned char bits = 0;
@@ -147,8 +147,11 @@ static int deqframe(int idx, unsigned long int sc)
 
 		idx = (idx - 1 + APBUFFSZ) % APBUFFSZ;
 
-		ns = 2.0 * (pulseamp((idx + 1 * PULSEW) % APBUFFSZ, 0) +
-			    pulseamp((idx + 8 * PULSEW) % APBUFFSZ, 0));
+		/* noise estimation */
+		ns = 2.0*(pulseamp((idx + 1 * PULSEW) % APBUFFSZ, 0) +
+		    pulseamp((idx + 8 * PULSEW) % APBUFFSZ, 0)); 
+
+		/* s/n test */
 		if (pv1 < ns * M_SQRT2) {
 			return 1;
 		}
@@ -156,6 +159,7 @@ static int deqframe(int idx, unsigned long int sc)
 		if (outformat)
 			ts = computetimestamp(pv0, pv1, pv2, sc - 1);
 
+		/* decode each bit */
 		for (k = 0; k < 112; k++) {
 
 			if (k && k % 8 == 0) {
@@ -205,8 +209,7 @@ void decodeiq(short *iq, int len)
 
 		needsample--;
 		if (needsample == 0)
-			needsample =
-			    deqframe((inidx - 250 * PULSEW + APBUFFSZ) % APBUFFSZ,
+			needsample = deqframe((inidx - 250 * PULSEW + APBUFFSZ) % APBUFFSZ,
 				     samplecount - 250 * PULSEW);
 	}
 
