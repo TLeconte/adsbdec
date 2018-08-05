@@ -93,7 +93,7 @@ static int initNet(void)
 	return 0;
 }
 
-void netout(unsigned char *frame, int len, int outformat, unsigned long int ts)
+void netout(const unsigned char *frame, const int len, const int outformat, const unsigned long int ts)
 {
 	char pkt[50];
 	int i, o, res;

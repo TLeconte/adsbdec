@@ -70,7 +70,7 @@ static const unsigned int error_table[112] = {
 	0x0706c0, 0x038360, 0x01c1b0, 0x00e0d8, 0x00706c, 0x003836, 0x001c1b, 0xfff409
 };
 
-unsigned int modesChecksum(const unsigned char *message, int n)
+unsigned int modesChecksum(const unsigned char *message, const int n)
 {
 	unsigned int rem = 0;
 	int i;
@@ -83,7 +83,7 @@ unsigned int modesChecksum(const unsigned char *message, int n)
 	return rem;
 }
 
-unsigned int fixChecksum(unsigned char *message, unsigned int ecrc, int n)
+unsigned int fixChecksum(unsigned char *message, const unsigned int ecrc, const int n)
 {
 	const unsigned int *tbl;
 	int i;

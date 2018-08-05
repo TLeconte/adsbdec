@@ -24,16 +24,16 @@ int df = 1;
 int errcorr = 1;
 int outformat = 0;
 
-extern unsigned int modesChecksum(const unsigned char *message, int n);
-extern unsigned int fixChecksum(unsigned char *message, unsigned int ecrc, int n);
+extern unsigned int modesChecksum(const unsigned char *message, const int n);
+extern unsigned int fixChecksum(unsigned char *message, const unsigned int ecrc, const int n);
 
-extern void netout(unsigned char *frame, int len, int outformat, unsigned long int ts);
+extern void netout(const unsigned char *frame, const int len, const int outformat, const unsigned long int ts);
 
 #define PULSEW 5
 #define APBUFFSZ 4096
 static float ampbuff[APBUFFSZ];
 
-static inline float pulseamp(int idx, int shp)
+static inline float pulseamp(const int idx, const int shp)
 {
 	float A;
 	float v[2 * PULSEW];
@@ -72,7 +72,7 @@ static void outpulse(int idx)
 }
 #endif
 
-static int validframe(unsigned char *frame, int len, unsigned long int ts)
+static int validframe(unsigned char *frame, const int len, const unsigned long int ts)
 {
 	unsigned int crc;
 	unsigned int type;
@@ -114,7 +114,7 @@ static int validframe(unsigned char *frame, int len, unsigned long int ts)
 	return 1;
 }
 
-static unsigned long int computetimestamp(float pv0, float pv1, float pv2, unsigned long int sc)
+static inline unsigned long int computetimestamp(const float pv0, const float pv1, const float pv2, const unsigned long int sc)
 {
 	double offset, tsf;
 
@@ -124,9 +124,10 @@ static unsigned long int computetimestamp(float pv0, float pv1, float pv2, unsig
 	return (unsigned long int)tsf;
 }
 
-static int deqframe(int idx, unsigned long int sc)
+static int deqframe(const int idx, const unsigned long int sc)
 {
 	static float pv0, pv1, pv2;
+	int lidx=idx;
 
 	pv0 = pv1;
 	pv1 = pv2;
@@ -145,11 +146,11 @@ static int deqframe(int idx, unsigned long int sc)
 		float ns;
 		unsigned long int ts = 0;
 
-		idx = (idx - 1 + APBUFFSZ) % APBUFFSZ;
+		lidx = (idx - 1 + APBUFFSZ) % APBUFFSZ;
 
 		/* noise estimation */
-		ns = 2.0*(pulseamp((idx + 1 * PULSEW) % APBUFFSZ, 0) +
-		    pulseamp((idx + 8 * PULSEW) % APBUFFSZ, 0)); 
+		ns = 2.0*(pulseamp((lidx + 1 * PULSEW) % APBUFFSZ, 0) +
+		    pulseamp((lidx + 8 * PULSEW) % APBUFFSZ, 0)); 
 
 		/* s/n test */
 		if (pv1 < ns * M_SQRT2) {
@@ -175,8 +176,8 @@ static int deqframe(int idx, unsigned long int sc)
 			}
 
 			bits = bits << 1;
-			if (pulseamp((idx + (16 + 2 * k) * PULSEW) % APBUFFSZ, 1) >
-			    pulseamp((idx + (17 + 2 * k) * PULSEW) % APBUFFSZ, 1))
+			if (pulseamp((lidx + (16 + 2 * k) * PULSEW) % APBUFFSZ, 1) >
+			    pulseamp((lidx + (17 + 2 * k) * PULSEW) % APBUFFSZ, 1))
 				bits |= 1;
 		}
 		frame[flen] = bits;
@@ -188,19 +189,20 @@ static int deqframe(int idx, unsigned long int sc)
 	return 1;
 }
 
-static int inidx = 0;
-static unsigned long int samplecount = 0;
-static int needsample = 250 * PULSEW;
-void decodeiq(short *iq, int len)
+void decodeiq(const short *iq, const int len)
 {
+	static int inidx = 0;
+	static unsigned long int samplecount = 0;
+	static int needsample = 250 * PULSEW;
+
 	int i;
 
 	for (i = 0; i < len; i += 2) {
-		float iv, qv, amp;
+		float amp,iv,qv;
 
 		iv = (float)(iq[i]);
 		qv = (float)(iq[i + 1]);
-		amp = hypotf(iv, qv) / 4096.0;
+		amp = hypotf(qv,iv);
 
 		ampbuff[inidx] = amp;
 		inidx = (inidx + 1) % APBUFFSZ;
