@@ -18,6 +18,7 @@
  */
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 
 int df = 1;
@@ -30,24 +31,18 @@ extern unsigned int fixChecksum(unsigned char *message, const unsigned int ecrc,
 extern void netout(const unsigned char *frame, const int len, const int outformat, const unsigned long int ts);
 
 #define PULSEW 5
-#define APBUFFSZ 4096
+#define APBUFFSZ (1024*1024)
 static float ampbuff[APBUFFSZ];
 
 static inline float pulseamp(const int idx, const int shp)
 {
 	float A;
-	float v[2 * PULSEW];
-
-	v[0] = ampbuff[(idx) % APBUFFSZ];
-	v[1] = ampbuff[(idx + 1) % APBUFFSZ];
-	v[2] = ampbuff[(idx + 2) % APBUFFSZ];
-	v[3] = ampbuff[(idx + 3) % APBUFFSZ];
-	v[4] = ampbuff[(idx + 4) % APBUFFSZ];
+	float *v=&(ampbuff[idx]);
 
 	if (shp)
 		A = v[0] + 1.25 * v[1] + 1.18 * v[2] + 1.1 * v[3] + 0.96 * v[4];
 	else
-		A = 1.1 * (v[0] + v[1] + v[2] + v[3] + v[4]);
+		A = 1.098 * (v[0] + v[1] + v[2] + v[3] + v[4]);
 	return A;
 }
 
@@ -55,17 +50,12 @@ static inline float pulseamp(const int idx, const int shp)
 static void outpulse(int idx)
 {
 	int i;
-	float v[9];
+	float *v=&(ampbuff[idx]);
 	float A;
 
-	v[0] = ampbuff[(idx) % APBUFFSZ];
-	v[1] = ampbuff[(idx + 1) % APBUFFSZ];
-	v[2] = ampbuff[(idx + 2) % APBUFFSZ];
-	v[3] = ampbuff[(idx + 3) % APBUFFSZ];
-	v[4] = ampbuff[(idx + 4) % APBUFFSZ];
 	A = v[0] + v[1] + v[2] + v[3] + v[4];
 
-	for (i = -3; i < 10; i++)
+	for (i = -1; i < 10; i++)
 		printf("%d %f\n", i, 5 * ampbuff[(idx + i + APBUFFSZ) % APBUFFSZ] / A);
 	printf("\n\n");
 
@@ -134,8 +124,8 @@ static int deqframe(const int idx, const unsigned long int sc)
 
 	/* preamble matched filter */
 	pv2 =
-	    pulseamp(idx, 1) + pulseamp((idx + 2 * PULSEW) % APBUFFSZ, 1) +
-	     pulseamp((idx + 7 * PULSEW) % APBUFFSZ, 1) + pulseamp((idx + 9 * PULSEW) % APBUFFSZ, 1);
+	    pulseamp(idx, 1) + pulseamp(idx + 2 * PULSEW , 1) +
+	     pulseamp(idx + 7 * PULSEW, 1) + pulseamp(idx + 9 * PULSEW, 1);
 
 	/* peak detection */
 	if (pv1 > pv0 && pv1 > pv2) {
@@ -146,11 +136,10 @@ static int deqframe(const int idx, const unsigned long int sc)
 		float ns;
 		unsigned long int ts = 0;
 
-		lidx = (idx - 1 + APBUFFSZ) % APBUFFSZ;
+		lidx = idx - 1 ;
 
 		/* noise estimation */
-		ns = 2.0*(pulseamp((lidx + 1 * PULSEW) % APBUFFSZ, 0) +
-		    pulseamp((lidx + 8 * PULSEW) % APBUFFSZ, 0)); 
+		ns = 2.0*(pulseamp(lidx + PULSEW, 0) + pulseamp(lidx + 8 * PULSEW , 0)); 
 
 		/* s/n test */
 		if (pv1 < ns * M_SQRT2) {
@@ -170,30 +159,33 @@ static int deqframe(const int idx, const unsigned long int sc)
 
 				if (df && flen == 7) {
 					if (validframe(frame, flen, ts)) {
+						pv1=pv2=0;
 						return 128 * PULSEW;
 					}
 				}
 			}
 
 			bits = bits << 1;
-			if (pulseamp((lidx + (16 + 2 * k) * PULSEW) % APBUFFSZ, 1) >
-			    pulseamp((lidx + (17 + 2 * k) * PULSEW) % APBUFFSZ, 1))
+			if (pulseamp(lidx + (16 + 2 * k) * PULSEW , 1) >
+			    pulseamp(lidx + (17 + 2 * k) * PULSEW , 1))
 				bits |= 1;
 		}
 		frame[flen] = bits;
 		flen++;
 		if (validframe(frame, flen, ts)) {
+			pv1=pv2=0;
 			return 240 * PULSEW;
 		}
 	}
 	return 1;
 }
 
+#define DECOFFSET (255*PULSEW)
+unsigned long int samplecount = 0;
 void decodeiq(const short *iq, const int len)
 {
 	static int inidx = 0;
-	static unsigned long int samplecount = 0;
-	static int needsample = 250 * PULSEW;
+	static int needsample = DECOFFSET;
 
 	int i;
 
@@ -205,14 +197,17 @@ void decodeiq(const short *iq, const int len)
 		amp = hypotf(qv,iv);
 
 		ampbuff[inidx] = amp;
-		inidx = (inidx + 1) % APBUFFSZ;
+		inidx++;
+		if(inidx==APBUFFSZ) {
+			memcpy(ampbuff,&(ampbuff[APBUFFSZ-PULSEW-DECOFFSET]),(DECOFFSET+PULSEW)*sizeof(float));
+			inidx=DECOFFSET+PULSEW;
+		}	
 
 		samplecount++;
 
 		needsample--;
 		if (needsample == 0)
-			needsample = deqframe((inidx - 250 * PULSEW + APBUFFSZ) % APBUFFSZ,
-				     samplecount - 250 * PULSEW);
+			needsample = deqframe(inidx-DECOFFSET, samplecount );
 	}
 
 }
