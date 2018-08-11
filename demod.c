@@ -26,10 +26,10 @@ int df = 1;
 int errcorr = 1;
 int outformat = 0;
 
-extern uint32_t modesChecksum(const unsigned char *message, const int n);
-extern uint32_t fixChecksum(unsigned char *message, const uint32_t ecrc, const int n);
+extern uint32_t modesChecksum(const uint8_t *message, const int n);
+extern uint32_t fixChecksum(uint8_t *message, const uint32_t ecrc, const int n);
 
-extern void netout(const unsigned char *frame, const int len, const int outformat, const unsigned long int ts);
+extern void netout(const uint8_t *frame, const int len, const int outformat, const uint64_t ts);
 
 #define PULSEW 5
 #define APBUFFSZ (1024*1024)
@@ -61,7 +61,7 @@ static void outpulse(int idx)
 }
 #endif
 
-static int validframe(unsigned char *frame, const int len, const unsigned long int ts)
+static int validframe(uint8_t *frame, const int len, const uint64_t ts)
 {
 	uint32_t crc;
 	uint32_t type;
@@ -103,7 +103,7 @@ static int validframe(unsigned char *frame, const int len, const unsigned long i
 	return 1;
 }
 
-static int deqframe(const int idx, const unsigned long int sc)
+static int deqframe(const int idx, const uint64_t sc)
 {
 	static uint32_t pv0, pv1, pv2;
 	int lidx=idx;
@@ -119,12 +119,12 @@ static int deqframe(const int idx, const unsigned long int sc)
 	/* peak detection */
 	if (pv1 > pv0 && pv1 > pv2) 
 	{
-		unsigned char frame[14];
+		uint8_t frame[14];
 		int flen = 0;
-		unsigned char bits = 0;
+		uint8_t bits = 0;
 		int k;
 		int ns;
-		unsigned long int ts = 0;
+		uint64_t ts = 0;
 
 		lidx = idx - 1 ;
 
@@ -137,7 +137,7 @@ static int deqframe(const int idx, const unsigned long int sc)
 		}
 
 		if (outformat)
-			ts = 12*(sc - 1)/10;
+			ts = 12*((sc - 1)&0xfffffffffffffff)/10;
 
 		/* decode each bit */
 		for (k = 0; k < 112; k++) {
@@ -171,7 +171,7 @@ static int deqframe(const int idx, const unsigned long int sc)
 }
 
 #define DECOFFSET (255*PULSEW)
-unsigned long int samplecount = 0;
+uint64_t samplecount = 0;
 void decodeiq(const short *iq, const int len)
 {
 	static int inidx = 0;
