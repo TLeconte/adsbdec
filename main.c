@@ -102,7 +102,7 @@ int main(int argc, char **argv)
 			gain = atoi(optarg);
 			break;
 		case 'd':
-			df = 1;
+			df = 0;
 			break;
 		case 'e':
 			errcorr = 0;
