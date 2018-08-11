@@ -20,24 +20,25 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <inttypes.h>
 
 int df = 1;
 int errcorr = 1;
 int outformat = 0;
 
-extern unsigned int modesChecksum(const unsigned char *message, const int n);
-extern unsigned int fixChecksum(unsigned char *message, const unsigned int ecrc, const int n);
+extern uint32_t modesChecksum(const unsigned char *message, const int n);
+extern uint32_t fixChecksum(unsigned char *message, const uint32_t ecrc, const int n);
 
 extern void netout(const unsigned char *frame, const int len, const int outformat, const unsigned long int ts);
 
 #define PULSEW 5
 #define APBUFFSZ (1024*1024)
-static unsigned int ampbuff[APBUFFSZ];
+static uint32_t ampbuff[APBUFFSZ];
 
-static inline unsigned int pulseamp(const int idx)
+static inline uint32_t pulseamp(const int idx)
 {
 	 int A;
-	 unsigned int *v=&(ampbuff[idx]);
+	 uint32_t *v=&(ampbuff[idx]);
 
 	A = v[0]/2 + v[1] + v[2] + v[3] + v[4]/2;
 	return A;
@@ -62,8 +63,8 @@ static void outpulse(int idx)
 
 static int validframe(unsigned char *frame, const int len, const unsigned long int ts)
 {
-	unsigned int crc;
-	unsigned int type;
+	uint32_t crc;
+	uint32_t type;
 	int r;
 
 	type = frame[0] >> 3;
@@ -104,7 +105,7 @@ static int validframe(unsigned char *frame, const int len, const unsigned long i
 
 static int deqframe(const int idx, const unsigned long int sc)
 {
-	static unsigned int pv0, pv1, pv2;
+	static uint32_t pv0, pv1, pv2;
 	int lidx=idx;
 
 	pv0 = pv1;
@@ -180,7 +181,7 @@ void decodeiq(const short *iq, const int len)
 
 	for (i = 0; i < len; i += 2) {
 		int iv,qv;
-		unsigned int amp;
+		uint32_t amp;
 
 		iv = (int)(iq[i]);
 		qv = (int)(iq[i + 1]);
