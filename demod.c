@@ -27,7 +27,8 @@ int errcorr = 1;
 int outformat = 0;
 
 extern uint32_t modesChecksum(const uint8_t *message, const int n);
-extern uint32_t fixChecksum(uint8_t *message, const uint32_t ecrc, const int n);
+extern uint32_t fixChecksum(uint8_t *message, const uint32_t ecrc);
+extern uint32_t fixChecksum11(uint8_t *message, const uint32_t ecrc);
 
 extern void netout(const uint8_t *frame, const int len, const int outformat, const uint64_t ts);
 
@@ -40,7 +41,7 @@ static inline uint32_t pulseamp(const int idx)
 	 int A;
 	 uint32_t *v=&(ampbuff[idx]);
 
-	A = v[0]/2 + v[1] + v[2] + v[3] + v[4]/2;
+	A =  v[1] + v[2] + v[3] + 14*(v[0]+v[4])/16;
 	return A;
 }
 
@@ -73,15 +74,13 @@ static int validframe(uint8_t *frame, const int len, const uint64_t ts)
 	    )
 		return 0;
 
-	if (frame[len - 3] == 0 && frame[len - 2] == 0 && frame[len - 1] == 0)
-		return 0;
-
 	crc = modesChecksum(frame, len);
 
 	if (type == 11) {
-		if (crc & 0xffff80) {
+		crc &=0xffff80;
+		if (crc) {
 			if (errcorr)
-				r = fixChecksum(frame, crc, len);
+				r = fixChecksum11(frame, crc);
 			else
 				r = 0;
 			if (r == 0)
@@ -90,7 +89,7 @@ static int validframe(uint8_t *frame, const int len, const uint64_t ts)
 	} else {
 		if (crc) {
 			if (errcorr)
-				r = fixChecksum(frame, crc, len);
+				r = fixChecksum(frame, crc);
 			else
 				r = 0;
 			if (r == 0)
