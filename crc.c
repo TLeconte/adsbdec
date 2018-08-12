@@ -98,22 +98,6 @@ unsigned int fixChecksum(unsigned char *message, const unsigned int ecrc)
 	return 0;
 }
 
-unsigned int fixChecksum11(unsigned char *message, const unsigned int ecrc)
-{
-	const unsigned int *tbl = &(error_table[56]);
-	int i;
-	const int n = 7;
-
-	for (i = 0; i < n * 8; i++) {
-		if ( (tbl[i] & 0xffff80) == ecrc )  {
-			unsigned char bit = 1 << (7 - i % 8);
-			message[i / 8] ^= bit;
-			return 1;
-		}
-	}
-	return 0;
-}
-
 #if 0
 #define MLEN 14
 gentable()
