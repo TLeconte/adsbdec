@@ -20,8 +20,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <string.h>
-#include <math.h>
 #include <libairspy/airspy.h>
 
 int gain = 21;

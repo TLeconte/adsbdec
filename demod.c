@@ -19,7 +19,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 #include <inttypes.h>
 
 int df = 0;
@@ -68,6 +67,7 @@ static int validframe(uint8_t *frame, const int len, const uint64_t ts)
 	int r;
 
 	if (len == 7) {
+		/* no error correction for small packet */
 		type = frame[0] >> 3;
 		if(type != 11 ) 
 			return 0;
