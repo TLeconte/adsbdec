@@ -15,7 +15,7 @@ By default receive samples from airspy and output DF17/18 adsb frames in raw avr
 ## Example
 
 	On computer connected to airspy :
-> adsbdec -s 192.168.0.10:30001
+> adsbdec -d -e -s 192.168.0.10:30001
 
 	On another computer at addr 192.168.0.10 :
 > dump1090 --net-only --net-ri-port 30001 
@@ -23,7 +23,7 @@ By default receive samples from airspy and output DF17/18 adsb frames in raw avr
 Man could use adsbdec to send data to any other avr format compatible server (VRS, feeders for main adsb web site, etc )
 
 You could use netcat , if you need to act as server :
-> adsbdec | ncat -l 127.0.0.1 30002
+> adsbdec -e | ncat -l 127.0.0.1 30002
 
 ## Compile
 
