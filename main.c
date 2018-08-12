@@ -67,10 +67,10 @@ static void usage(void)
 	printf("adsbdec airspy ADSB decoder Copyright (c) 2018 Thierry Leconte  \n\n");
 	printf("usage : adsbdec [-d] [-e] [-m] [-f filename] [-s addr[:port]]\n\n");
 	printf
-	    ("By default receive samples from airspy and output DF11/17/18 adsb frames in raw avr format on stdout\n");
+	    ("By default receive samples from airspy and output DF17/18 adsb frames in raw avr format on stdout\n");
 	printf("Options :\n");
-	printf("\t-d : don't output DF11 frames\n");
-	printf("\t-e : don't use 1bit error correction\n");
+	printf("\t-d : output DF11 frames too\n");
+	printf("\t-e : use 1bit error correction (more packets, more CPU, more false packets)\n");
 	printf("\t-m : output avrmlat format (ie : with 12Mhz timestamp)\n");
 	printf("\t-f : input from filename instead of airspy (raw signed 16 bits IQ format)\n");
 	printf
@@ -102,10 +102,10 @@ int main(int argc, char **argv)
 			gain = atoi(optarg);
 			break;
 		case 'd':
-			df = 0;
+			df = 1;
 			break;
 		case 'e':
-			errcorr = 0;
+			errcorr = 1;
 			break;
 		case 'm':
 			outformat = 1;

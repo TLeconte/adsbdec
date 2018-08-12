@@ -22,13 +22,12 @@
 #include <math.h>
 #include <inttypes.h>
 
-int df = 1;
-int errcorr = 1;
+int df = 0;
+int errcorr = 0;
 int outformat = 0;
 
 extern uint32_t modesChecksum(const uint8_t *message, const int n);
 extern uint32_t fixChecksum(uint8_t *message, const uint32_t ecrc);
-extern uint32_t fixChecksum11(uint8_t *message, const uint32_t ecrc);
 
 extern void netout(const uint8_t *frame, const int len, const int outformat, const uint64_t ts);
 
@@ -68,25 +67,16 @@ static int validframe(uint8_t *frame, const int len, const uint64_t ts)
 	uint32_t type;
 	int r;
 
-	type = frame[0] >> 3;
-	if ((type != 17 && type != 18 && type != 11) || ((type == 17 || type == 18) && len != 14)
-	    || (type == 11 && len != 7)
-	    )
-		return 0;
-
-	crc = modesChecksum(frame, len);
-
-	if (type == 11) {
-		crc &=0xffff80;
-		if (crc) {
-			if (errcorr)
-				r = fixChecksum11(frame, crc);
-			else
-				r = 0;
-			if (r == 0)
+	if (len == 7) {
+		type = frame[0] >> 3;
+		if(type != 11 ) 
+			return 0;
+		crc = modesChecksum(frame, len);
+		if(crc & 0xffff80) {
 				return 0;
 		}
 	} else {
+		crc = modesChecksum(frame, len);
 		if (crc) {
 			if (errcorr)
 				r = fixChecksum(frame, crc);
@@ -95,6 +85,9 @@ static int validframe(uint8_t *frame, const int len, const uint64_t ts)
 			if (r == 0)
 				return 0;
 		}
+		type = frame[0] >> 3;
+		if(type != 17 && type != 18)
+			return 0;
 	}
 
 	netout(frame, len, outformat, ts);
