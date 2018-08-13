@@ -76,7 +76,7 @@ unsigned int modesChecksum(const unsigned char *message, const int n)
 	int i;
 
 	for (i = 0; i < n; ++i) {
-		rem = (rem << 8) ^ crc_table[message[i] ^ ((rem & 0xff0000) >> 16)];
+		rem = (rem << 8) ^ crc_table[message[i] ^ (rem >> 16)];
 		rem = rem & 0xffffff;
 	}
 
