@@ -31,7 +31,7 @@ extern uint32_t fixChecksum(uint8_t *message, const uint32_t ecrc);
 extern void netout(const uint8_t *frame, const int len, const int outformat, const uint64_t ts);
 
 #define PULSEW 5
-#define APBUFFSZ (1024*1024)
+#define APBUFFSZ 4096
 static uint32_t ampbuff[APBUFFSZ];
 
 static inline uint32_t pulseamp(const int idx)
