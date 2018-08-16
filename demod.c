@@ -39,7 +39,7 @@ static inline uint32_t pulseamp(const int idx)
 	 int A;
 	 uint32_t *v=&(ampbuff[idx]);
 
-	A =  v[1] + v[2] + v[3] + 14*(v[0]+v[4])/16;
+	A =  v[1] + v[2] + v[3] + 6*(v[0]+v[4])/8;
 	return A;
 }
 
