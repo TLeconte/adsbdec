@@ -123,8 +123,8 @@ void netout(const unsigned char *frame, const int len, const unsigned long int t
 			sockfd = -1;
 		}
 	} else {
-	//	fwrite(pkt, strlen(pkt), 1, stdout);
-	//	fflush(stdout);
+		fwrite(pkt, strlen(pkt), 1, stdout);
+		fflush(stdout);
 	}
 
 }
