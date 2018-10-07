@@ -69,7 +69,7 @@ static void usage(void)
 	printf
 	    ("By default receive samples from airspy and output DF17/18 adsb frames in raw avr format on stdout\n");
 	printf("Options :\n");
-	printf("\t-d : output DF11 frames too\n");
+	printf("\t-d : output short frames too\n");
 	printf("\t-e : use 1bit error correction (more packets, more CPU, more false packets)\n");
 	printf("\t-m : output avrmlat format (ie : with 12Mhz timestamp)\n");
 	printf("\t-f : input from filename instead of airspy (raw signed 16 bits IQ format)\n");

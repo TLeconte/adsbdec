@@ -83,24 +83,41 @@ unsigned int modesChecksum(const unsigned char *message, const int n)
 	return rem;
 }
 
-unsigned int fixChecksum(unsigned char *message, const unsigned int ecrc)
+unsigned int testFix(unsigned char *message, const unsigned int ecrc)
 {
 	int i;
 	const int n = 14;
 
 	for (i = 0; i < n * 8; i++) {
-		if (error_table[i] == ecrc) {
-			unsigned char bit = 1 << (7 - i % 8);
-			message[i / 8] ^= bit;
-			return 1;
+		if ((error_table[i]^ecrc) == 0) {
+			return i;
 		}
 	}
-	return 0;
+	return -1;
+}
+
+unsigned int testFix11(unsigned char *message, const unsigned int ecrc)
+{
+	int i;
+	const int n = 7;
+
+	for (i = 0; i < n * 8; i++) {
+		if (((error_table[i+56]^ecrc)&0xffff80) == 0 ) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+void fixChecksum(unsigned char *message, const unsigned int nb)
+{
+	unsigned char bit = 1 << (7 - nb % 8);
+	message[nb / 8] ^= bit;
 }
 
 #if 0
 #define MLEN 14
-gentable()
+void gentable(void )
 {
 	int i, n;
 	unsigned char frame[16];
@@ -129,12 +146,13 @@ int main()
 
 	for (n = 0; n < 16; n++)
 		frame[n] = 0;
-	frame[3] = 0x04;
+
+	frame[5] = 0x04;
 
 	crc = modesChecksum(frame, 7);
 	printf("crc=%06x\n", crc);
 
-	r = fixChecksum(frame, crc, 7);
+	r = fixChecksum11(frame, crc);
 	printf("r=%d\n", r);
 	crc = modesChecksum(frame, 7);
 	printf("ccrc=%06x\n", crc);

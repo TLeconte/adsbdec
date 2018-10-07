@@ -26,7 +26,7 @@
 #include <inttypes.h>
 
 char *Rawaddr = NULL;
-extern int outformat;
+int outformat;
 
 static int sockfd = -1;
 
@@ -93,7 +93,7 @@ static int initNet(void)
 	return 0;
 }
 
-void netout(const unsigned char *frame, const int len, const int outformat, const unsigned long int ts)
+void netout(const unsigned char *frame, const int len, const unsigned long int ts)
 {
 	char pkt[50];
 	int i, o, res;
@@ -123,8 +123,8 @@ void netout(const unsigned char *frame, const int len, const int outformat, cons
 			sockfd = -1;
 		}
 	} else {
-		fwrite(pkt, strlen(pkt), 1, stdout);
-		fflush(stdout);
+	//	fwrite(pkt, strlen(pkt), 1, stdout);
+	//	fflush(stdout);
 	}
 
 }
