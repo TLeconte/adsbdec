@@ -124,7 +124,7 @@ int main(int argc, char **argv)
 	if (filename) {
 		fileInput(filename);
 	} else {
-		initAirspy();
+		if(initAirspy()<0) return -1;
 		runAirspySample();
 	}
 

@@ -22,6 +22,12 @@
 #include <unistd.h>
 #include <libairspy/airspy.h>
 
+#ifdef AIRSPY_MINI
+#define AIR_SAMPLE_RATE 6000000
+#else
+#define AIR_SAMPLE_RATE 10000000
+#endif
+
 int gain = 21;
 
 extern void decodeiq(short *iq, int len);
@@ -47,7 +53,7 @@ int initAirspy(void)
 	supported_samplerates = (uint32_t *) malloc(count * sizeof(uint32_t));
 	airspy_get_samplerates(device, supported_samplerates, count);
 	for (i = 0; i < count; i++)
-		if (supported_samplerates[i] == 10000000)
+		if (supported_samplerates[i] == AIR_SAMPLE_RATE)
 			break;
 	if (i >= count) {
 		fprintf(stderr, "did not find needed sampling rate\n");

@@ -26,19 +26,35 @@ int df = 0;
 extern void netout(const uint8_t *frame, const int len, const uint64_t ts);
 extern int validframe(uint8_t *frame, const int len);
 
+#ifdef AIRSPY_MINI
+#define PULSEW 3
+#else
 #define PULSEW 5
+#endif
+
 #define APBUFFSZ 4096
 static uint32_t ampbuff[APBUFFSZ];
 
 
+#ifdef AIRSPY_MINI
 static inline uint32_t pulseamp(const int idx)
 {
 	 int A;
 	 uint32_t *v=&(ampbuff[idx]);
 
-	A =  v[1] + v[2] + v[3] + 6*(v[0]+v[4])/8;
+	A =  v[1] + 17*(v[0]+v[2])/20;
 	return A;
 }
+#else
+static inline uint32_t pulseamp(const int idx)
+{
+	 int A;
+	 uint32_t *v=&(ampbuff[idx]);
+
+	A =  v[1] + v[2] + v[3] + 3*(v[0]+v[4])/4;
+	return A;
+}
+#endif
 
 #if 0
 static void outpulse(int idx)
