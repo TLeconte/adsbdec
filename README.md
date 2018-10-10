@@ -7,7 +7,7 @@ An ADSB open source decoder for the airspy
 By default receive samples from airspy and output DF17/18 adsb frames in raw avr format on stdout
 
 ## Options
-	-d : output DF11 frames too
+	-d : output short frame frames too
 	-e : use 1bit error correction (more frames, more cpu, more  false positive frames)
 	-f : input from filename instead of airspy (raw signed 16 bits IQ format)
 	-s addr[:port] : send ouput via TCP to server at address addr:port (default port : 30001)
