@@ -129,3 +129,8 @@ int runAirspySample(void)
 
 	return 0;
 }
+
+void stopAirspy(int sig)
+{
+	airspy_stop_rx(device);
+}
