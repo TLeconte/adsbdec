@@ -106,7 +106,7 @@ static inline int deqframe(const int idx, const uint64_t sc)
 #define DECOFFSET (255*PULSEW)
 uint64_t samplecount = 0;
 
-#ifdef AIR_MINI
+#ifdef AIRSPY_MINI
 const int pshape[2*PULSEW]={4,5,4,4,5,4};
 #else
 const int pshape[2*PULSEW]={3,4,4,4,3,3,4,4,4,3};
