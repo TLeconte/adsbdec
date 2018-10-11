@@ -102,7 +102,7 @@ static int deqframe(const int idx, const uint64_t sc)
 		ns = 2*(pulseamp(lidx + PULSEW) + pulseamp(lidx + 8 * PULSEW)); 
 
 		/* s/n test */
-		if ( 2 * pv1 < 3 * ns)  {
+		if ( pv1 < 2 * ns)  {
 			return 1;
 		}
 
