@@ -32,48 +32,10 @@ extern int validframe(uint8_t *frame, const int len);
 #define PULSEW 5
 #endif
 
-#define APBUFFSZ 4096
-static uint32_t ampbuff[APBUFFSZ];
+#define APBUFFSZ (1024*PULSEW)
+static uint32_t signalbuff[APBUFFSZ];
 
-
-#ifdef AIRSPY_MINI
-static inline uint32_t pulseamp(const int idx)
-{
-	 int A;
-	 uint32_t *v=&(ampbuff[idx]);
-
-	A =  v[1] + 17*(v[0]+v[2])/20;
-	return A;
-}
-#else
-static inline uint32_t pulseamp(const int idx)
-{
-	 int A;
-	 uint32_t *v=&(ampbuff[idx]);
-
-	A =  v[1] + v[2] + v[3] + 3*(v[0]+v[4])/4;
-	return A;
-}
-#endif
-
-#if 0
-static void outpulse(int idx)
-{
-	int i;
-	int *v=&(ampbuff[idx]);
-	float A;
-
-	A = v[0] + v[1] + v[2] + v[3] + v[4];
-
-	for (i = -1; i < 10; i++) {
-			printf("%d %f\n", i, (float) ampbuff[idx + i ] / A);
-	}
-	printf("\n\n");
-
-}
-#endif
-
-static int deqframe(const int idx, const uint64_t sc)
+static inline int deqframe(const int idx, const uint64_t sc)
 {
 	static uint32_t pv0, pv1, pv2;
 	int lidx=idx;
@@ -81,10 +43,10 @@ static int deqframe(const int idx, const uint64_t sc)
 	pv0 = pv1;
 	pv1 = pv2;
 
-	/* preamble matched filter */
+	/* preamble power */
 	pv2 =
-	    pulseamp(idx) + pulseamp(idx + 2 * PULSEW) +
-	     pulseamp(idx + 7 * PULSEW) + pulseamp(idx + 9 * PULSEW);
+	    signalbuff[idx] + signalbuff[idx + 2 * PULSEW] +
+	     signalbuff[idx + 7 * PULSEW] + signalbuff[idx + 9 * PULSEW];
 
 	/* peak detection */
 	if (pv1 > pv0 && pv1 > pv2) 
@@ -99,10 +61,10 @@ static int deqframe(const int idx, const uint64_t sc)
 		lidx = idx - 1 ;
 
 		/* noise estimation */
-		ns = 2*(pulseamp(lidx + PULSEW) + pulseamp(lidx + 8 * PULSEW)); 
+		ns = 2*(signalbuff[lidx + PULSEW] + signalbuff[lidx + 8 * PULSEW]); 
 
 		/* s/n test */
-		if ( pv1 < 2 * ns)  {
+		if ( pv1 < 2 *  ns)  {
 			return 1;
 		}
 
@@ -126,8 +88,8 @@ static int deqframe(const int idx, const uint64_t sc)
 			}
 
 			bits = bits << 1;
-			if (pulseamp(lidx + (16 + 2 * k) * PULSEW) >
-			    pulseamp(lidx + (17 + 2 * k) * PULSEW))
+			if (signalbuff[lidx + (16 + 2 * k) * PULSEW] >
+			    signalbuff[lidx + (17 + 2 * k) * PULSEW])
 				bits |= 1;
 		}
 		frame[flen] = bits;
@@ -143,29 +105,42 @@ static int deqframe(const int idx, const uint64_t sc)
 
 #define DECOFFSET (255*PULSEW)
 uint64_t samplecount = 0;
+
+#ifdef AIR_MINI
+const int pshape[2*PULSEW]={4,5,4,4,5,4};
+#else
+const int pshape[2*PULSEW]={3,4,4,4,3,3,4,4,4,3};
+#endif
+
 void decodeiq(const short *iq, const int len)
 {
 	static int inidx = 0;
 	static int needsample = DECOFFSET;
+	static int ampbuff[PULSEW];
 
-	int i;
+	int i,j;
 
 	for (i = 0; i < len; i += 2) {
 		int iv,qv;
 		uint32_t amp;
-
+		uint32_t off=samplecount%PULSEW;
+	
 		iv = (int)(iq[i]);
 		qv = (int)(iq[i + 1]);
-		amp = qv*qv+iv*iv;
 
-		ampbuff[inidx] = amp;
-		inidx++;
+		ampbuff[off]=qv*qv+iv*iv;
+		samplecount++;
+
+		/* downsampling */
+		amp=0;
+		for(j=0;j<PULSEW;j++)
+			amp+=ampbuff[j]*pshape[j+PULSEW-1-off];
+		signalbuff[inidx++] = amp;
+
 		if(inidx==APBUFFSZ) {
-			memcpy(ampbuff,&(ampbuff[APBUFFSZ-PULSEW-DECOFFSET]),(DECOFFSET+PULSEW)*sizeof(int));
+			memcpy(signalbuff,&(signalbuff[APBUFFSZ-PULSEW-DECOFFSET]),(DECOFFSET+PULSEW)*sizeof(int));
 			inidx=DECOFFSET+PULSEW;
 		}	
-
-		samplecount++;
 
 		needsample--;
 		if (needsample == 0)
