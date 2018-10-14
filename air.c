@@ -132,5 +132,8 @@ int runAirspySample(void)
 
 void stopAirspy(int sig)
 {
-	airspy_stop_rx(device);
+	if(device)
+		 airspy_stop_rx(device);
+	else
+		exit(1);
 }
