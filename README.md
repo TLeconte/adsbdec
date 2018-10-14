@@ -1,5 +1,5 @@
 # Adsbdec
-An ADSB open source decoder for the airspy
+An ADSB open source decoder for the airspy R2 and mini
 
 ## Usage 
 > adsbdec [-d] [-e] [-f filename] [-s addr[:port]]
@@ -8,7 +8,7 @@ By default receive samples from airspy and output DF17/18 adsb frames in raw avr
 
 ## Options
 	-d : output short frame frames too
-	-e : use 1bit error correction (more frames, more cpu, more  false positive frames)
+	-e : use 1bit error correction (more frames, more cpu)
 	-f : input from filename instead of airspy (raw signed 16 bits IQ format)
 	-s addr[:port] : send ouput via TCP to server at address addr:port (default port : 30001)
 
@@ -27,5 +27,16 @@ You could use netcat , if you need to act as server :
 
 ## Compile
 
-	Just do make.
-	Need libusb and libairspy
+   Need libusb and libairspy
+
+### For airspy R2 
+
+	Just do
+> make
+
+
+### For airspy mini
+
+	Edit Makefile to add -D AIRSPY_MINI (follows instruction in Makefile), then 
+> make
+
