@@ -33,7 +33,7 @@ extern int validframe(uint8_t *frame, const int len);
 #endif
 
 #define APBUFFSZ (1024*PULSEW)
-static uint32_t signalbuff[APBUFFSZ];
+static uint32_t amp2buff[APBUFFSZ];
 
 static inline int deqframe(const int idx, const uint64_t sc)
 {
@@ -45,8 +45,8 @@ static inline int deqframe(const int idx, const uint64_t sc)
 
 	/* preamble power */
 	pv2 =
-	    signalbuff[idx] + signalbuff[idx + 2 * PULSEW] +
-	     signalbuff[idx + 7 * PULSEW] + signalbuff[idx + 9 * PULSEW];
+	    amp2buff[idx] + amp2buff[idx + 2 * PULSEW] +
+	     amp2buff[idx + 7 * PULSEW] + amp2buff[idx + 9 * PULSEW];
 
 	/* peak detection */
 	if (pv1 > pv0 && pv1 > pv2) 
@@ -61,7 +61,7 @@ static inline int deqframe(const int idx, const uint64_t sc)
 		lidx = idx - 1 ;
 
 		/* noise estimation */
-		ns = 2*(signalbuff[lidx + PULSEW] + signalbuff[lidx + 8 * PULSEW]); 
+		ns = 2*(amp2buff[lidx + PULSEW] + amp2buff[lidx + 8 * PULSEW]); 
 
 		/* s/n test */
 		if ( pv1 < 2 *  ns)  {
@@ -88,8 +88,8 @@ static inline int deqframe(const int idx, const uint64_t sc)
 			}
 
 			bits = bits << 1;
-			if (signalbuff[lidx + (16 + 2 * k) * PULSEW] >
-			    signalbuff[lidx + (17 + 2 * k) * PULSEW])
+			if (amp2buff[lidx + (16 + 2 * k) * PULSEW] >
+			    amp2buff[lidx + (17 + 2 * k) * PULSEW])
 				bits |= 1;
 		}
 		frame[flen] = bits;
@@ -116,29 +116,30 @@ void decodeiq(const short *iq, const int len)
 {
 	static int inidx = 0;
 	static int needsample = DECOFFSET;
-	static int ampbuff[PULSEW];
+	static int ibuff[PULSEW],qbuff[PULSEW];
 
 	int i,j;
 
 	for (i = 0; i < len; i += 2) {
 		int iv,qv;
-		uint32_t amp;
+		uint32_t sumi,sumq;
 		uint32_t off=samplecount%PULSEW;
 	
-		iv = (int)(iq[i]);
-		qv = (int)(iq[i + 1]);
+		ibuff[off] = (int)(iq[i]);
+		qbuff[off] = (int)(iq[i + 1]);
 
-		ampbuff[off]=qv*qv+iv*iv;
 		samplecount++;
 
-		/* downsampling */
-		amp=0;
-		for(j=0;j<PULSEW;j++)
-			amp+=ampbuff[j]*pshape[j+PULSEW-1-off];
-		signalbuff[inidx++] = amp;
+		sumi=sumq=0;
+		for(j=0;j<PULSEW;j++) {
+			int cf=pshape[j+PULSEW-1-off];
+			sumi+=ibuff[j]*cf;
+			sumq+=qbuff[j]*cf;
+		}
+		amp2buff[inidx++] = sumi*sumi+sumq*sumq;
 
 		if(inidx==APBUFFSZ) {
-			memcpy(signalbuff,&(signalbuff[APBUFFSZ-PULSEW-DECOFFSET]),(DECOFFSET+PULSEW)*sizeof(int));
+			memcpy(amp2buff,&(amp2buff[APBUFFSZ-PULSEW-DECOFFSET]),(DECOFFSET+PULSEW)*sizeof(int));
 			inidx=DECOFFSET+PULSEW;
 		}	
 
