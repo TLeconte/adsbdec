@@ -127,6 +127,8 @@ int runAirspySample(void)
 		sleep(2);
 	}
 
+	airspy_close(device);
+	airspy_exit();
 	return 0;
 }
 
