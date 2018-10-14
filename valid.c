@@ -118,7 +118,7 @@ int validframe(uint8_t *frame, const int len)
 	int nb;
 
 	type = frame[0] >> 3;
-	crc = modesChecksum(frame, len);
+	crc = Checksum(frame, len);
 
 	/* no error case */
 	if((crc==0 && len == 14 && (type==17 || type==18)) ||

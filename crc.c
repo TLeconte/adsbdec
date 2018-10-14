@@ -17,8 +17,10 @@
  *
  */
 #include <stddef.h>
+#include <inttypes.h>
 
-static const unsigned int crc_table[256] = {
+
+static const uint32_t crc_table[256] = {
 	0x000000, 0xfff409, 0x001c1b, 0xffe812, 0x003836, 0xffcc3f, 0x00242d, 0xffd024,
 	0x00706c, 0xff8465, 0x006c77, 0xff987e, 0x00485a, 0xffbc53, 0x005441, 0xffa048,
 	0x00e0d8, 0xff14d1, 0x00fcc3, 0xff08ca, 0x00d8ee, 0xff2ce7, 0x00c4f5, 0xff30fc,
@@ -53,10 +55,7 @@ static const unsigned int crc_table[256] = {
 	0x05d4a4, 0xfa20ad, 0x05c8bf, 0xfa3cb6, 0x05ec92, 0xfa189b, 0x05f089, 0xfa0480
 };
 
-static const unsigned int error_table[112] = {
-	0x16c19e, 0x0b60cf, 0xfa4a63, 0x82df35, 0xbe959e, 0x5f4acf, 0xd05f63, 0x97d5b5,
-	0xb410de, 0x5a086f, 0xd2fe33, 0x96851d, 0xb4b88a, 0x5a5c45, 0xd2d426, 0x696a13,
-	0xcb4f0d, 0x9a5d82, 0x4d2ec1, 0xd96d64, 0x6cb6b2, 0x365b59, 0xe4d7a8, 0x726bd4,
+static const uint32_t error_table[112] = {
 	0x3935ea, 0x1c9af5, 0xf1b77e, 0x78dbbf, 0xc397db, 0x9e31e9, 0xb0e2f0, 0x587178,
 	0x2c38bc, 0x161c5e, 0x0b0e2f, 0xfa7d13, 0x82c48d, 0xbe9842, 0x5f4c21, 0xd05c14,
 	0x682e0a, 0x341705, 0xe5f186, 0x72f8c3, 0xc68665, 0x9cb936, 0x4e5c9b, 0xd8d449,
@@ -67,23 +66,26 @@ static const unsigned int error_table[112] = {
 	0x018567, 0xff38b7, 0x80665f, 0xbfc92b, 0xa01e91, 0xaff54c, 0x57faa6, 0x2bfd53,
 	0xea04ad, 0x8af852, 0x457c29, 0xdd4410, 0x6ea208, 0x375104, 0x1ba882, 0x0dd441,
 	0xf91024, 0x7c8812, 0x3e4409, 0xe0d800, 0x706c00, 0x383600, 0x1c1b00, 0x0e0d80,
-	0x0706c0, 0x038360, 0x01c1b0, 0x00e0d8, 0x00706c, 0x003836, 0x001c1b, 0xfff409
+	0x0706c0, 0x038360, 0x01c1b0, 0x00e0d8, 0x00706c, 0x003836, 0x001c1b, 0xfff409,
+	0x800000, 0x400000, 0x200000, 0x100000, 0x080000, 0x040000, 0x020000, 0x010000,
+	0x008000, 0x004000, 0x002000, 0x001000, 0x000800, 0x000400, 0x000200, 0x000100,
+	0x000080, 0x000040, 0x000020, 0x000010, 0x000008, 0x000004, 0x000002, 0x000001
 };
 
-unsigned int modesChecksum(const unsigned char *message, const int n)
+uint32_t Checksum(const uint8_t *frame, const int n)
 {
-	unsigned int rem = 0;
+	uint32_t crc = 0;
 	int i;
 
-	for (i = 0; i < n; ++i) {
-		rem = (rem << 8) ^ crc_table[message[i] ^ (rem >> 16)];
-		rem = rem & 0xffffff;
+	for (i = 0; i < n-3; ++i) {
+		crc = (crc << 8) ^ crc_table[frame[i] ^ (crc >> 16)];
+		crc = crc & 0xffffff;
 	}
 
-	return rem;
+	return crc ^ (((uint32_t)frame[n-3]<<16)|((uint32_t)frame[n-2]<<8)|(uint32_t)frame[n-1]);
 }
 
-unsigned int testFix(unsigned char *message, const unsigned int ecrc)
+uint32_t testFix(uint8_t *frame, const uint32_t ecrc)
 {
 	int i;
 	const int n = 14;
@@ -96,23 +98,10 @@ unsigned int testFix(unsigned char *message, const unsigned int ecrc)
 	return -1;
 }
 
-unsigned int testFix11(unsigned char *message, const unsigned int ecrc)
+void fixChecksum(uint8_t *frame, const uint32_t nb)
 {
-	int i;
-	const int n = 7;
-
-	for (i = 0; i < n * 8; i++) {
-		if (((error_table[i+56]^ecrc)&0xffff80) == 0 ) {
-			return i;
-		}
-	}
-	return -1;
-}
-
-void fixChecksum(unsigned char *message, const unsigned int nb)
-{
-	unsigned char bit = 1 << (7 - nb % 8);
-	message[nb / 8] ^= bit;
+	uint8_t bit = 1 << (7 - nb % 8);
+	frame[nb / 8] ^= bit;
 }
 
 #if 0
@@ -120,9 +109,9 @@ void fixChecksum(unsigned char *message, const unsigned int nb)
 void gentable(void )
 {
 	int i, n;
-	unsigned char frame[16];
-	unsigned char bit;
-	unsigned int crc;
+	uint8_t frame[16];
+	uint8_t bit;
+	uint32_t crc;
 
 	for (n = 0; n < MLEN; n++)
 		frame[n] = 0;
@@ -130,32 +119,37 @@ void gentable(void )
 
 		bit = 1 << (7 - i % 8);
 		frame[i / 8] = bit;
-		crc = modesChecksum(frame, MLEN);
-		printf("0x%06x\n", crc&0xffff80);
+		crc = Checksum(frame, MLEN);
+		printf("0x%06x\n", crc);
 		frame[i / 8] = 0;
 	}
 }
 
 int main()
 {
-	unsigned char frame[16];
+	uint8_t frame[16];
 	int i, n, r;
-	unsigned int crc;
+	uint32_t crc;
 
 //	gentable();
+
 
 	for (n = 0; n < 16; n++)
 		frame[n] = 0;
 
 	frame[5] = 0x04;
 
-	crc = modesChecksum(frame, 7);
+	crc = Checksum(frame, MLEN);
 	printf("crc=%06x\n", crc);
 
-	r = fixChecksum11(frame, crc);
+	r = testFix(frame, crc);
 	printf("r=%d\n", r);
-	crc = modesChecksum(frame, 7);
+
+	fixChecksum(frame,r);
+
+	crc = Checksum(frame, MLEN);
 	printf("ccrc=%06x\n", crc);
+
 
 }
 #endif
