@@ -141,8 +141,8 @@ int validframe(uint8_t *frame, const int len)
 	}
 
 	if( type == 11 || type == 17 || type == 18 ) return 0;
-	if( type != 0 && type != 4 && type != 5 && type != 16  &&
-	     type != 20 && type != 21 && type  != 24 ) return 0;
+	if( len == 7 && type != 0 && type != 4 && type != 5) return 0;
+	if(len == 14  && type != 16  && type != 20 && type != 21 && type  != 24 ) return 0;
 
 	return findaircraft(crc);
 }
