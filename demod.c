@@ -121,7 +121,6 @@ void decodeiq(const short *iq, const int len)
 	int i,j;
 
 	for (i = 0; i < len; i += 2) {
-		int iv,qv;
 		uint32_t sumi,sumq;
 		uint32_t off=samplecount%PULSEW;
 	
