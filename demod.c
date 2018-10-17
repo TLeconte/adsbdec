@@ -27,9 +27,9 @@ extern void netout(const uint8_t *frame, const int len, const uint64_t ts);
 extern int validframe(uint8_t *frame, const int len);
 
 #ifdef AIRSPY_MINI
-#define PULSEW 3
+#define PULSEW 6
 #else
-#define PULSEW 5
+#define PULSEW 10
 #endif
 
 #define APBUFFSZ (1024*PULSEW)
@@ -109,31 +109,30 @@ uint64_t samplecount = 0;
 #ifdef AIRSPY_MINI
 const int pshape[2*PULSEW]={4,5,4,4,5,4};
 #else
-const int pshape[2*PULSEW]={3,4,4,4,3,3,4,4,4,3};
+const int pshapeI[2*PULSEW]={3,3,-4,-4,4,4,-4,-4,3,3,3,3,-4,-4,4,4,-4,-4,3,3};
+const int pshapeQ[2*PULSEW]={3,-3,-4,4,4,-4,-4,4,3,-3,3,-3,-4,4,4,-4,-4,4,3,-3};
 #endif
 
-void decodeiq(const short *iq, const int len)
+void decodeiq(const short *r, const int len)
 {
 	static int inidx = 0;
 	static int needsample = DECOFFSET;
-	static int ibuff[PULSEW],qbuff[PULSEW];
+	static int rbuff[PULSEW];
 
 	int i,j;
 
-	for (i = 0; i < len; i += 2) {
-		uint32_t sumi,sumq;
-		uint32_t off=samplecount%PULSEW;
-	
-		ibuff[off] = (int)(iq[i]);
-		qbuff[off] = (int)(iq[i + 1]);
+	for (i = 0; i < len; i++) {
+		int sumi,sumq;
+		uint32_t off;
 
+		off=samplecount%PULSEW;
+		rbuff[off] = (int)r[i];
 		samplecount++;
 
 		sumi=sumq=0;
 		for(j=0;j<PULSEW;j++) {
-			int cf=pshape[j+PULSEW-1-off];
-			sumi+=ibuff[j]*cf;
-			sumq+=qbuff[j]*cf;
+			sumi+=rbuff[j]*pshapeI[j+PULSEW-1-off];
+			sumq+=rbuff[j]*pshapeQ[j+PULSEW-1-off];
 		}
 		amp2buff[inidx++] = sumi*sumi+sumq*sumq;
 
@@ -146,5 +145,4 @@ void decodeiq(const short *iq, const int len)
 		if (needsample == 0)
 			needsample = deqframe(inidx-DECOFFSET, samplecount );
 	}
-
 }

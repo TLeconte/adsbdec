@@ -48,7 +48,7 @@ int initAirspy(void)
 		return -1;
 	}
 
-	result = airspy_set_sample_type(device, AIRSPY_SAMPLE_INT16_IQ);
+	result = airspy_set_sample_type(device, AIRSPY_SAMPLE_INT16_REAL);
 	if (result != AIRSPY_SUCCESS) {
 		fprintf(stderr, "airspy_set_sample_type() failed: %s (%d)\n",
 			airspy_error_name(result), result);
