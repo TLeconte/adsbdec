@@ -45,10 +45,18 @@ int initAirspy(void)
 	if (result != AIRSPY_SUCCESS) {
 		fprintf(stderr, "airspy_open() failed: %s (%d)\n", airspy_error_name(result),
 			result);
-		airspy_exit();
 		return -1;
 	}
 
+	result = airspy_set_sample_type(device, AIRSPY_SAMPLE_INT16_IQ);
+	if (result != AIRSPY_SUCCESS) {
+		fprintf(stderr, "airspy_set_sample_type() failed: %s (%d)\n",
+			airspy_error_name(result), result);
+		airspy_close(device);
+		return -1;
+	}
+
+	result = airspy_set_packing(device, 1);
 	airspy_get_samplerates(device, &count, 0);
 	supported_samplerates = (uint32_t *) malloc(count * sizeof(uint32_t));
 	airspy_get_samplerates(device, supported_samplerates, count);
@@ -57,7 +65,7 @@ int initAirspy(void)
 			break;
 	if (i >= count) {
 		fprintf(stderr, "did not find needed sampling rate\n");
-		airspy_exit();
+		airspy_close(device);
 		return -1;
 	}
 	free(supported_samplerates);
@@ -67,16 +75,6 @@ int initAirspy(void)
 		fprintf(stderr, "airspy_set_samplerate() failed: %s (%d)\n",
 			airspy_error_name(result), result);
 		airspy_close(device);
-		airspy_exit();
-		return -1;
-	}
-
-	result = airspy_set_sample_type(device, AIRSPY_SAMPLE_INT16_IQ);
-	if (result != AIRSPY_SUCCESS) {
-		fprintf(stderr, "airspy_set_sample_type() failed: %s (%d)\n",
-			airspy_error_name(result), result);
-		airspy_close(device);
-		airspy_exit();
 		return -1;
 	}
 
@@ -90,6 +88,8 @@ int initAirspy(void)
 	if (result != AIRSPY_SUCCESS) {
 		fprintf(stderr, "airspy_set_linearity_gain() failed: %s (%d)\n",
 			airspy_error_name(result), result);
+		airspy_close(device);
+		return -1;
 	}
 
 	result = airspy_set_freq(device, 1090000000);
@@ -97,7 +97,6 @@ int initAirspy(void)
 		fprintf(stderr, "airspy_set_freq() failed: %s (%d)\n", airspy_error_name(result),
 			result);
 		airspy_close(device);
-		airspy_exit();
 		return -1;
 	}
 
@@ -119,7 +118,6 @@ int runAirspySample(void)
 		fprintf(stderr, "airspy_start_rx() failed: %s (%d)\n", airspy_error_name(result),
 			result);
 		airspy_close(device);
-		airspy_exit();
 		return -1;
 	}
 
@@ -128,7 +126,6 @@ int runAirspySample(void)
 	}
 
 	airspy_close(device);
-	airspy_exit();
 	return 0;
 }
 
