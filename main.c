@@ -120,7 +120,6 @@ int main(int argc, char **argv)
 	sigact.sa_handler = stopAirspy;
 	sigemptyset(&sigact.sa_mask);
 	sigact.sa_flags = 0;
-	sigaction(SIGPIPE, &sigact, NULL);
 	sigaction(SIGTERM, &sigact, NULL);
 	sigaction(SIGQUIT, &sigact, NULL);
 	sigaction(SIGINT, &sigact, NULL);
