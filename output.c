@@ -37,6 +37,9 @@ static int initNet(void)
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
 
+	if(Rawaddr==NULL)
+		return -1;
+
 	memset(&hints, 0, sizeof hints);
 	if (Rawaddr[0] == '[') {
 		hints.ai_family = AF_INET6;
@@ -82,24 +85,29 @@ static int initNet(void)
 		}
 		break;
 	}
+
+	freeaddrinfo(servinfo);
+
 	if (p == NULL) {
 		fprintf(stderr, "failed to connect\r");
 		return -1;
 	}
 	fprintf(stderr, "connected                    \n");
 
-	freeaddrinfo(servinfo);
-
 	return 0;
 }
 
-void netout(const unsigned char *frame, const int len, const unsigned long int ts)
+void netout(const uint8_t *frame, const int len, const uint64_t ts)
 {
 	char pkt[50];
 	int i, o, res;
 
 	if (outformat) {
+#ifdef AIRSPY_MINI
 		sprintf(pkt, "@%012" PRIX64, ts & 0xffffffffffff);
+#else
+		sprintf(pkt, "@%012" PRIX64, (12*(ts & 0xffffffffffffff)/20) & 0xffffffffffff);
+#endif
 		o = 13;
 	} else {
 		sprintf(pkt, "*");

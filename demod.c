@@ -56,7 +56,6 @@ static inline int deqframe(const int idx, const uint64_t sc)
 		uint8_t bits = 0;
 		int k;
 		int ns;
-		uint64_t ts = 0;
 
 		lidx = idx - 1 ;
 
@@ -68,8 +67,6 @@ static inline int deqframe(const int idx, const uint64_t sc)
 			return 1;
 		}
 
-		ts = 12*((sc - 1)&0xfffffffffffffff)/10;
-
 		/* decode each bit */
 		for (k = 0; k < 112; k++) {
 
@@ -80,7 +77,7 @@ static inline int deqframe(const int idx, const uint64_t sc)
 
 				if (df && flen == 7) {
 					if (validframe(frame, flen)) {
-						netout(frame, flen, ts);
+						netout(frame, flen, sc);
 						pv1=pv2=0;
 						return 128 * PULSEW;
 					}
@@ -95,7 +92,7 @@ static inline int deqframe(const int idx, const uint64_t sc)
 		frame[flen] = bits;
 		flen++;
 		if (validframe(frame, flen)) {
-			netout(frame, flen, ts);
+			netout(frame, flen, sc);
 			pv1=pv2=0;
 			return 240 * PULSEW;
 		}
@@ -104,7 +101,7 @@ static inline int deqframe(const int idx, const uint64_t sc)
 }
 
 #define DECOFFSET (255*PULSEW)
-uint64_t samplecount = 0;
+uint64_t timestamp;
 
 #ifdef AIRSPY_MINI
 const int pshape[2*PULSEW]={4,5,4,4,5,4};
@@ -125,9 +122,9 @@ void decodeiq(const short *r, const int len)
 		int sumi,sumq;
 		uint32_t off;
 
-		off=samplecount%PULSEW;
+		off=timestamp%PULSEW;
 		rbuff[off] = (int)r[i];
-		samplecount++;
+		timestamp++;
 
 		sumi=sumq=0;
 		for(j=0;j<PULSEW;j++) {
@@ -143,6 +140,6 @@ void decodeiq(const short *r, const int len)
 
 		needsample--;
 		if (needsample == 0)
-			needsample = deqframe(inidx-DECOFFSET, samplecount );
+			needsample = deqframe(inidx-DECOFFSET, timestamp );
 	}
 }

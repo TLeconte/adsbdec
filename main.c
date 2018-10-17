@@ -21,11 +21,13 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <time.h>
 
 extern char *Rawaddr;
 extern int outformat;
 
 extern int gain;
+extern unsigned long int timestamp;
 
 char *filename = NULL;
 
@@ -90,6 +92,7 @@ int main(int argc, char **argv)
 {
 	int c;
 	struct sigaction sigact;
+	struct timespec tp;
 
 	while ((c = getopt(argc, argv, "f:s:g:dem")) != EOF) {
 		switch (c) {
@@ -109,6 +112,14 @@ int main(int argc, char **argv)
 			errcorr = 1;
 			break;
 		case 'm':
+			/* just to init timestamp to something */
+       			clock_gettime(CLOCK_REALTIME, &tp);
+#ifdef AIRSPY_MINI
+			timestamp=tp.tv_sec*12000000LL+tp.tv_nsec/83; /* 12Mb/s clock */
+#else
+			timestamp=tp.tv_sec*20000000LL+tp.tv_nsec/50; /* 20Mb/s clock */
+#endif
+
 			outformat = 1;
 			break;
 		default:
