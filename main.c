@@ -35,7 +35,7 @@ extern int initAirspy(void);
 extern void stopAirspy(int sig);
 extern int runAirspySample(void);
 
-extern int df, errcorr;
+extern int df, errcorr,crcok;
 extern void decodeiq(short *iq, int len);
 
 #define IQBUFFSZ (1024*1024)
@@ -94,7 +94,7 @@ int main(int argc, char **argv)
 	struct sigaction sigact;
 	struct timespec tp;
 
-	while ((c = getopt(argc, argv, "f:s:g:dem")) != EOF) {
+	while ((c = getopt(argc, argv, "cf:s:g:dem")) != EOF) {
 		switch (c) {
 		case 'f':
 			filename = optarg;
@@ -107,6 +107,9 @@ int main(int argc, char **argv)
 			break;
 		case 'd':
 			df = 1;
+			break;
+		case 'c':
+			crcok = 1;
 			break;
 		case 'e':
 			errcorr = 1;
@@ -128,12 +131,14 @@ int main(int argc, char **argv)
 		}
 	}
 
-	sigact.sa_handler = stopAirspy;
 	sigemptyset(&sigact.sa_mask);
 	sigact.sa_flags = 0;
+	sigact.sa_handler = stopAirspy;
 	sigaction(SIGTERM, &sigact, NULL);
 	sigaction(SIGQUIT, &sigact, NULL);
 	sigaction(SIGINT, &sigact, NULL);
+	sigact.sa_handler = SIG_IGN;
+	sigaction(SIGPIPE, &sigact, NULL);
 
 	if (filename) {
 		fileInput(filename);

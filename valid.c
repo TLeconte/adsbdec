@@ -24,6 +24,7 @@
 #include "crc.h"
 
 int errcorr = 0;
+int crcok = 0;
 
 typedef struct aircraft_s aircraft_t;
 struct aircraft_s {
@@ -126,6 +127,8 @@ int validframe(uint8_t *frame, const int len)
 		addaircraft(icao(frame));
 		return 1;
 	}
+
+	if(crcok) return 0;
 
 	if(errcorr && len == 14 ) {
 		nb = testFix(frame, crc);
