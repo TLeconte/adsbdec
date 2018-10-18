@@ -73,16 +73,14 @@ static void usage(void)
 	    ("By default receive samples from airspy and output DF17/18 adsb frames in raw avr format on stdout\n");
 	printf("Options :\n");
 	printf("\t-d : output short frames too\n");
+	printf("\t-c : only frame wit true crc (DF11/17/18)\n");
 	printf("\t-e : use 1bit error correction (more packets, more CPU, more false packets)\n");
 	printf("\t-m : output avrmlat format (ie : with 12Mhz timestamp)\n");
 	printf("\t-f : input from filename instead of airspy (raw signed 16 bits IQ format)\n");
 	printf
 	    ("\t-s addr[:port] : send ouput via TCP to server at address addr:port (default port : 30001)\n");
 	printf("\nExample :\n");
-	printf("\tOn computer connected to airspy :\n");
-	printf("\t\tadsbdec -s 192.168.0.10:30001\n");
-	printf("\tOn another computer at addr 192.168.0.10 :\n");
-	printf("\t\tdump1090 --net-only --net-ri-port 30001 \n");
+	printf("\t\tadsbdec -e -d -c -s 192.168.0.10:30001\n");
 	printf
 	    ("\nMan could use adsbdec to send data to any other avr format compatible server (VRS, feeders for main adsb web site, etc )\n\n");
 
