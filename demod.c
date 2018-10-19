@@ -131,7 +131,9 @@ void decodeiq(const short *r, const int len)
 			sumi+=rbuff[j]*pshapeI[j+PULSEW-1-off];
 			sumq+=rbuff[j]*pshapeQ[j+PULSEW-1-off];
 		}
-		amp2buff[inidx++] = sumi*sumi+sumq*sumq;
+                sumi/=16;sumq/=16;
+
+		amp2buff[inidx++] = (sumi*sumi+sumq*sumq)/8;
 
 		if(inidx==APBUFFSZ) {
 			memcpy(amp2buff,&(amp2buff[APBUFFSZ-PULSEW-DECOFFSET]),(DECOFFSET+PULSEW)*sizeof(int));
