@@ -73,13 +73,13 @@ static void usage(void)
 	printf("adsbdec airspy ADSB decoder Copyright (c) 2018 Thierry Leconte  \n\n");
 	printf("usage : adsbdec [-d] [-e] [-m] [-f filename] [-s addr[:port]]\n\n");
 	printf
-	    ("By default receive samples from airspy and output DF17/18 adsb frames in raw avr format on stdout\n");
+	    ("By default receive samples from airspy and output long adsb frames in raw avr format on stdout\n");
 	printf("Options :\n");
 	printf("\t-d : output short frames too\n");
 	printf("\t-c : only frame wit true crc (DF11/17/18)\n");
-	printf("\t-e : use 1bit error correction (more packets, more CPU, more false packets)\n");
+	printf("\t-e : use 1bit error correction\n");
 	printf("\t-m : output avrmlat format (ie : with 12Mhz timestamp)\n");
-	printf("\t-f : input from filename instead of airspy (raw signed 16 bits IQ format)\n");
+	printf("\t-f : input from filename instead of airspy (raw signed 16 bits real format)\n");
 	printf
 	    ("\t-s addr[:port] : send ouput via TCP to server at address addr:port (default port : 30001)\n");
 	printf("\nExample :\n");
