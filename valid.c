@@ -54,13 +54,14 @@ static void delaircraft(aircraft_t *prev,aircraft_t *curr)
 	}
 }
 
-static void addaircraft(uint32_t aa)
+static int addaircraft(uint32_t aa)
 {
 	aircraft_t *curr=ahead;
 	aircraft_t *prev=NULL;
 	int t=time(NULL);
+	int res;
 
-	if(aa==0) return;
+	if(aa==0) return 0;
 
 	while(curr) {
 		if(curr->AA==aa) {
@@ -79,13 +80,17 @@ static void addaircraft(uint32_t aa)
 		curr=malloc(sizeof(aircraft_t));
 		curr->AA=aa;
 		curr->cnt=0;
-	}
+		res=0;
+	} else 
+		res = 1;
 	if(curr!=ahead) {
 		curr->next=ahead;
 		ahead=curr;
 	}
 	curr->t=t;
 	curr->cnt++;
+
+	return res;
 }
 
 static int findaircraft(uint32_t aa)
@@ -94,14 +99,16 @@ static int findaircraft(uint32_t aa)
 	aircraft_t *prev=NULL;
 	int t=time(NULL);
 
+	if(aa==0) return 0;
+
 	while(curr) {
-		if(curr->AA==aa && curr->cnt>1 ) {
+		if(curr->AA==aa) {
 			curr->cnt++;
 			return 1;
 		}
 		if(curr->t+DT < t) {
 			delaircraft(prev,curr);
-			return 1;
+			return 0;
 		}
 		prev=curr;
 		curr=curr->next;	
@@ -126,8 +133,8 @@ int validframe(uint8_t *frame, const int len,const uint64_t ts)
 	/* no error case */
 	if((crc==0 && len == 14 && (type==17 || type==18)) ||
 	   ((crc & 0xffff80) == 0 && len == 7 && type==11)) {
-		addaircraft(icao(frame));
-		netout(frame, len,ts);
+		if (addaircraft(icao(frame)))
+			netout(frame, len,ts);
 		return 1;
 	}
 
