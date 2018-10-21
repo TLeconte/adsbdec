@@ -29,24 +29,26 @@ extern int outformat;
 extern int gain;
 extern unsigned long int timestamp;
 
-char *filename = NULL;
-
-extern int initAirspy(void);
-extern void stopAirspy(int sig);
-extern int runAirspySample(void);
+extern int runOutput(void);
+extern void handlerExit(int sig);
 
 extern int df, errcorr,crcok;
 extern void decodeiq(short *iq, int len);
 
+char *filename = NULL;
+
+
 #define IQBUFFSZ (1024*1024)
-static int fileInput(char *filename)
+void *fileInput(void *arg)
 {
 	int fd;
 	short *iqbuff;
 
 	fd = open(filename, O_RDONLY);
-	if (fd < 0)
-		return -2;
+	if (fd < 0) {
+		handlerExit(0);
+		return NULL;
+	}
 
 	iqbuff = (short *)malloc(IQBUFFSZ * sizeof(short));
 
@@ -62,7 +64,8 @@ static int fileInput(char *filename)
 	} while (1);
 
 	close(fd);
-	return 0;
+	handlerExit(0);
+	return NULL;
 }
 
 static void usage(void)
@@ -88,7 +91,7 @@ static void usage(void)
 
 int main(int argc, char **argv)
 {
-	int c;
+	int c,res;
 	struct sigaction sigact;
 	struct timespec tp;
 
@@ -131,19 +134,15 @@ int main(int argc, char **argv)
 
 	sigemptyset(&sigact.sa_mask);
 	sigact.sa_flags = 0;
-	sigact.sa_handler = stopAirspy;
+	sigact.sa_handler = handlerExit;
 	sigaction(SIGTERM, &sigact, NULL);
 	sigaction(SIGQUIT, &sigact, NULL);
 	sigaction(SIGINT, &sigact, NULL);
+
 	sigact.sa_handler = SIG_IGN;
 	sigaction(SIGPIPE, &sigact, NULL);
 
-	if (filename) {
-		fileInput(filename);
-	} else {
-		if(initAirspy()<0) return -1;
-		runAirspySample();
-	}
+	res = runOutput();
 
-	return 0;
+	return res;
 }

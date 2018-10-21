@@ -78,11 +78,8 @@ int initAirspy(void)
 		return -1;
 	}
 
-	result = airspy_set_packing(device, 1);
-	if (result != AIRSPY_SUCCESS) {
-		fprintf(stderr, "airspy_set_packing true failed: %s (%d)\n",
-			airspy_error_name(result), result);
-	}
+	/* had problem with packing , disable it */
+	airspy_set_packing(device, 0);
 
 	result = airspy_set_linearity_gain(device, gain);
 	if (result != AIRSPY_SUCCESS) {
@@ -109,9 +106,15 @@ static int rx_callback(airspy_transfer_t * transfer)
 	return 0;
 }
 
-int runAirspySample(void)
+int startAirspy(void)
 {
 	int result;
+
+        if(device == NULL) return 0;
+	printf("start airspy\n");
+
+        if(airspy_is_streaming(device) == AIRSPY_TRUE)
+		return 0;
 
 	result = airspy_start_rx(device, rx_callback, NULL);
 	if (result != AIRSPY_SUCCESS) {
@@ -121,18 +124,27 @@ int runAirspySample(void)
 		return -1;
 	}
 
-	while (airspy_is_streaming(device) == AIRSPY_TRUE) {
-		sleep(2);
-	}
-
-	airspy_close(device);
 	return 0;
 }
 
-void stopAirspy(int sig)
+void stopAirspy(void)
 {
-	if(device)
-		 airspy_stop_rx(device);
-	else
-		exit(1);
+  if(device == NULL) return ;
+
+  printf("stop airspy\n");
+
+  airspy_stop_rx(device);
+}
+
+
+void closeAirspy(void)
+{
+
+   if(device == NULL) return ;
+
+    printf("close  airspy\n");
+
+    airspy_stop_rx(device);
+    airspy_close(device);
+
 }

@@ -23,6 +23,8 @@
 #include <time.h>
 #include "crc.h"
 
+extern void netout(const uint8_t *frame, const int len, const uint64_t ts);
+
 int errcorr = 0;
 int crcok = 0;
 
@@ -112,7 +114,7 @@ static inline uint32_t icao(uint8_t *frame)
 	return (frame[1]<<16)|(frame[2]<<8)|frame[3];
 }
 
-int validframe(uint8_t *frame, const int len)
+int validframe(uint8_t *frame, const int len,const uint64_t ts)
 {
 	uint32_t crc;
 	uint32_t type;
@@ -125,6 +127,7 @@ int validframe(uint8_t *frame, const int len)
 	if((crc==0 && len == 14 && (type==17 || type==18)) ||
 	   ((crc & 0xffff80) == 0 && len == 7 && type==11)) {
 		addaircraft(icao(frame));
+		netout(frame, len,ts);
 		return 1;
 	}
 
@@ -137,6 +140,7 @@ int validframe(uint8_t *frame, const int len)
 			type = frame[0] >> 3;
 			if( type == 17 || type == 18 ) {
 				addaircraft(icao(frame));
+				netout(frame, len,ts);
 				return 1;
 			}
 			fixChecksum(frame,nb); /* undo fix */
@@ -147,5 +151,10 @@ int validframe(uint8_t *frame, const int len)
 	if( len == 7 && type != 0 && type != 4 && type != 5) return 0;
 	if(len == 14  && type != 16  && type != 20 && type != 21 && type  != 24 ) return 0;
 
-	return findaircraft(crc);
+	if (findaircraft(crc)) {
+		netout(frame, len,ts);
+		return 1;
+	}
+
+	return 0;
 }

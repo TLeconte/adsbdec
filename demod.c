@@ -23,8 +23,7 @@
 
 int df = 0;
 
-extern void netout(const uint8_t *frame, const int len, const uint64_t ts);
-extern int validframe(uint8_t *frame, const int len);
+extern int validframe(uint8_t *frame, const int len,const uint64_t ts);
 
 #ifdef AIRSPY_MINI
 #define PULSEW 6
@@ -76,8 +75,7 @@ static inline int deqframe(const int idx, const uint64_t sc)
 				flen++;
 
 				if (df && flen == 7) {
-					if (validframe(frame, flen)) {
-						netout(frame, flen, sc);
+					if (validframe(frame, flen, sc)) {
 						pv1=pv2=0;
 						return 128 * PULSEW;
 					}
@@ -91,8 +89,7 @@ static inline int deqframe(const int idx, const uint64_t sc)
 		}
 		frame[flen] = bits;
 		flen++;
-		if (validframe(frame, flen)) {
-			netout(frame, flen, sc);
+		if (validframe(frame, flen,sc)) {
 			pv1=pv2=0;
 			return 240 * PULSEW;
 		}
@@ -107,8 +104,8 @@ uint64_t timestamp;
 const int pshapeI[2*PULSEW]={4,4,-5,-5,-4,-4,-4,-4,5,5,-4,-4};
 const int pshapeQ[2*PULSEW]={4,-4,-5,5,4,-4,4,-4,-5,5,4,-4};
 #else
-const int pshapeI[2*PULSEW]={3,3,-4,-4,4,4,-4,-4,3,3,3,3,-4,-4,4,4,-4,-4,3,3};
-const int pshapeQ[2*PULSEW]={3,-3,-4,4,4,-4,-4,4,3,-3,3,-3,-4,4,4,-4,-4,4,3,-3};
+const int pshapeI[3*PULSEW]={3,3,-4,-4,4,4,-4,-4,3,3,3,3,-4,-4,4,4,-4,-4,3,3};
+const int pshapeQ[3*PULSEW]={3,-3,-4,4,4,-4,-4,4,3,-3,3,-3,-4,4,4,-4,-4,4,3,-3};
 #endif
 
 void decodeiq(const short *r, const int len)

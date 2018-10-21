@@ -24,11 +24,34 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <inttypes.h>
+#include <pthread.h>
+
+extern int initAirspy(void);
+extern int startAirspy(void);
+extern void stopAirspy(void);
+extern void closeAirspy(void);
+extern char* filename;
+extern void *fileInput(void *arg);
+
 
 char *Rawaddr = NULL;
 int outformat;
 
 static int sockfd = -1;
+static int do_exit=0;
+
+typedef struct blk_s blk_t;
+struct blk_s {
+        uint8_t frame[112];
+        int len;
+        uint64_t ts;
+        blk_t *next;
+};
+static blk_t *blkhead;
+static blk_t *blkend;
+static pthread_mutex_t blkmtx;
+static pthread_cond_t blkwcd;
+
 
 static int initNet(void)
 {
@@ -36,17 +59,21 @@ static int initNet(void)
 	char *port;
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
+	char *Caddr;
 
 	if(Rawaddr==NULL)
 		return -1;
 
+	Caddr=strdup(Rawaddr);
+
 	memset(&hints, 0, sizeof hints);
-	if (Rawaddr[0] == '[') {
+	if (Caddr[0] == '[') {
 		hints.ai_family = AF_INET6;
-		addr = Rawaddr + 1;
+		addr = Caddr + 1;
 		port = strstr(addr, "]");
 		if (port == NULL) {
 			fprintf(stderr, "Invalid IPV6 address\n");
+			free(Caddr);
 			return -1;
 		}
 		*port = 0;
@@ -57,7 +84,7 @@ static int initNet(void)
 			port++;
 	} else {
 		hints.ai_family = AF_UNSPEC;
-		addr = Rawaddr;
+		addr = Caddr;
 		port = strstr(addr, ":");
 		if (port == NULL)
 			port = "30001";
@@ -71,8 +98,10 @@ static int initNet(void)
 
 	if ((rv = getaddrinfo(addr, port, &hints, &servinfo)) != 0) {
 		fprintf(stderr, "Invalid/unknown address %s\n", addr);
+		free(Caddr);
 		return -1;
-	}
+	}	
+	free(Caddr);
 
 	for (p = servinfo; p != NULL; p = p->ai_next) {
 		if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
@@ -81,6 +110,7 @@ static int initNet(void)
 
 		if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
 			close(sockfd);
+			sockfd=-1;
 			continue;
 		}
 		break;
@@ -89,50 +119,134 @@ static int initNet(void)
 	freeaddrinfo(servinfo);
 
 	if (p == NULL) {
-		fprintf(stderr, "failed to connect\r");
+		fprintf(stderr, "failed to connect\n");
 		return -1;
 	}
-	fprintf(stderr, "connected                    \n");
+	fprintf(stderr, "connected\n");
 
 	return 0;
 }
 
 void netout(const uint8_t *frame, const int len, const uint64_t ts)
 {
-	char pkt[50];
-	int i, o, res;
+   blk_t *blk;
 
-	if (outformat) {
-#ifdef AIRSPY_MINI
-		sprintf(pkt, "@%012" PRIX64, ts & 0xffffffffffff);
-#else
-		sprintf(pkt, "@%012" PRIX64, (12*(ts & 0xffffffffffffff)/20) & 0xffffffffffff);
-#endif
-		o = 13;
-	} else {
-		sprintf(pkt, "*");
-		o = 1;
+   blk=malloc(sizeof(blk_t));
+
+   memcpy(blk->frame,frame,len);
+   blk->len=len;
+   blk->ts=ts;
+   blk->next=NULL;
+	
+   pthread_mutex_lock(&blkmtx);
+
+   if(blkend) 
+   	blkend->next=blk;
+   blkend=blk;
+   if(blkhead==NULL)
+	blkhead=blk;
+
+   pthread_cond_signal(&blkwcd);
+   pthread_mutex_unlock(&blkmtx);
+
+}
+
+
+int runOutput(void)
+{
+   blk_t *blk;
+   char pkt[50];
+   int i, o, res;
+
+   pthread_mutex_init(&blkmtx, NULL);
+   pthread_cond_init(&blkwcd, NULL);
+   blkhead=blkend=NULL;
+
+   if(filename) {
+        pthread_t th;
+        pthread_create(&th, NULL, fileInput, NULL);
+    } else {
+     if(initAirspy()<0)
+	return (-1);
+    }
+
+   do {
+
+	if(do_exit) 
+		break;
+
+        if (Rawaddr && sockfd < 0) {
+		initNet();
+		if (sockfd < 0) {
+			sleep(3);
+			continue;
+		}
+		if(startAirspy()<0)
+			return (-1);
 	}
 
-	for (i = 0; i < len; i++) {
-		sprintf(&(pkt[2 * i + o]), "%02X", frame[i]);
+      pthread_mutex_lock(&blkmtx);
+      while (blkhead == NULL && do_exit==0)
+          pthread_cond_wait(&blkwcd, &blkmtx);
 
+	if(do_exit)
+                break;
+
+      blk = blkhead;
+      if(blkend==blk)
+        blkend=NULL;
+
+      blkhead=blk->next;
+
+      pthread_mutex_unlock(&blkmtx);
+
+      if (outformat) {
+#ifdef AIRSPY_MINI
+		sprintf(pkt, "@%012" PRIX64, blk->ts & 0xffffffffffff);
+#else
+		sprintf(pkt, "@%012" PRIX64, (12*(blk->ts & 0xffffffffffffff)/20) & 0xffffffffffff);
+#endif
+		o = 13;
+      } else {
+		sprintf(pkt, "*");
+		o = 1;
+        }
+
+	for (i = 0; i < blk->len; i++) {
+		sprintf(&(pkt[2 * i + o]), "%02X", blk->frame[i]);
 	}
 	strcat(pkt, ";\n");
 
 	if (Rawaddr) {
-		if (sockfd < 0)
-			initNet();
-		if (sockfd < 0)
-			return;
 		res = write(sockfd, pkt, strlen(pkt));
 		if (res <= 0) {
+				printf("write error\n");
 			close(sockfd);
 			sockfd = -1;
+			stopAirspy();
 		}
 	} else {
 		fwrite(pkt, strlen(pkt), 1, stdout);
 		fflush(stdout);
 	}
+
+      free(blk);
+   } while (1);
+
+   closeAirspy();
+   return 0;
+}
+
+void handlerExit(int sig)
+{
+
+   do_exit=1;
+   pthread_cond_signal(&blkwcd);
+
+   stopAirspy();
+   if(sockfd>0)  {
+        close(sockfd);
+	sockfd=-1;
+   }
 
 }
