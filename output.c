@@ -152,6 +152,25 @@ void netout(const uint8_t *frame, const int len, const uint64_t ts)
 }
 
 
+static void freelist(void)
+{
+
+   blk_t *blk;
+
+   pthread_mutex_lock(&blkmtx);
+
+   blk=blkhead;
+   while(blk) {
+   	blk_t *blknext;
+	blknext=blk->next;
+	free(blk);
+	blk=blknext;	
+   }
+
+   blkhead=blkend=NULL;
+   pthread_mutex_unlock(&blkmtx);
+}
+
 int runOutput(void)
 {
    blk_t *blk;
@@ -224,6 +243,7 @@ int runOutput(void)
 			close(sockfd);
 			sockfd = -1;
 			stopAirspy();
+			freelist();
 		}
 	} else {
 		fwrite(pkt, strlen(pkt), 1, stdout);
