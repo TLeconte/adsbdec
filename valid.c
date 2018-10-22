@@ -102,7 +102,7 @@ static int findaircraft(uint32_t aa)
 	if(aa==0) return 0;
 
 	while(curr) {
-		if(curr->AA==aa) {
+		if(curr->AA==aa && curr->cnt>1 ) {
 			curr->cnt++;
 			return 1;
 		}
