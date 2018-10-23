@@ -101,11 +101,11 @@ static inline int deqframe(const int idx, const uint64_t sc)
 uint64_t timestamp;
 
 #ifdef AIRSPY_MINI
-const int pshapeI[2*PULSEW]={4,4,-5,-5,-4,-4,-4,-4,5,5,-4,-4};
+const int pshapeI[2*PULSEW]={-4,-4,5,5,-4,-4,-4,-4,5,5,-4,-4};
 const int pshapeQ[2*PULSEW]={4,-4,-5,5,4,-4,4,-4,-5,5,4,-4};
 #else
-const int pshapeI[3*PULSEW]={3,3,-4,-4,4,4,-4,-4,3,3,3,3,-4,-4,4,4,-4,-4,3,3};
-const int pshapeQ[3*PULSEW]={3,-3,-4,4,4,-4,-4,4,3,-3,3,-3,-4,4,4,-4,-4,4,3,-3};
+const int pshapeI[2*PULSEW]={3,3,-4,-4,4,4,-4,-4,3,3,3,3,-4,-4,4,4,-4,-4,3,3};
+const int pshapeQ[2*PULSEW]={3,-3,-4,4,4,-4,-4,4,3,-3,3,-3,-4,4,4,-4,-4,4,3,-3};
 #endif
 
 void decodeiq(const short *r, const int len)
