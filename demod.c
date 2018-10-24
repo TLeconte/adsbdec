@@ -104,8 +104,14 @@ uint64_t timestamp;
 const int pshapeI[2*PULSEW]={-4,-4,5,5,-4,-4,-4,-4,5,5,-4,-4};
 const int pshapeQ[2*PULSEW]={4,-4,-5,5,4,-4,4,-4,-5,5,4,-4};
 #else
-const int pshapeI[2*PULSEW]={3,3,-4,-4,4,4,-4,-4,3,3,3,3,-4,-4,4,4,-4,-4,3,3};
-const int pshapeQ[2*PULSEW]={3,-3,-4,4,4,-4,-4,4,3,-3,3,-3,-4,4,4,-4,-4,4,3,-3};
+const int pshapeI[2*PULSEW]={
+11,12,-16,-16,16,16,-16,-16,12,11,
+11,12,-16,-16,16,16,-16,-16,12,11
+};
+const int pshapeQ[2*PULSEW]={
+-11,12,16,-16,-16,16,16,-16,-12,11,
+-11,12,16,-16,-16,16,16,-16,-12,11
+};
 #endif
 
 void decodeiq(const short *r, const int len)
