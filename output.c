@@ -189,6 +189,10 @@ int runOutput(void)
 	return (-1);
     }
 
+    if (Rawaddr==NULL) 
+	if(startAirspy()<0)
+		return (-1);
+
    do {
 
 	if(do_exit) 
