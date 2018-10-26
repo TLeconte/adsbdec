@@ -133,8 +133,9 @@ int validframe(uint8_t *frame, const int len,const uint64_t ts)
 	/* no error case */
 	if((crc==0 && len == 14 && (type==17 || type==18)) ||
 	   ((crc & 0xffff80) == 0 && len == 7 && type==11)) {
-		if (addaircraft(icao(frame)))
+		if (addaircraft(icao(frame))) {
 			netout(frame, len,ts);
+		}
 		return 1;
 	}
 
@@ -146,8 +147,9 @@ int validframe(uint8_t *frame, const int len,const uint64_t ts)
 			fixChecksum(frame,nb);
 			type = frame[0] >> 3;
 			if( type == 17 || type == 18 ) {
-				addaircraft(icao(frame));
-				netout(frame, len,ts);
+				if(addaircraft(icao(frame))) {
+					netout(frame, len,ts);
+				}
 				return 1;
 			}
 			fixChecksum(frame,nb); /* undo fix */
