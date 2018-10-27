@@ -119,7 +119,7 @@ static int initNet(void)
 	freeaddrinfo(servinfo);
 
 	if (p == NULL) {
-		return -1;
+		return 1;
 	}
 	fprintf(stderr, "connected\n");
 
@@ -185,12 +185,12 @@ int runOutput(void)
         pthread_create(&th, NULL, fileInput, NULL);
     } else {
      if(initAirspy()<0)
-	return (-1);
+	return -1;
     }
 
     if (Rawaddr==NULL) 
 	if(startAirspy()<0)
-		return (-1);
+		return -1;
 
    do {
 
@@ -198,13 +198,14 @@ int runOutput(void)
 		break;
 
         if (Rawaddr && sockfd < 0) {
-		initNet();
+		if(initNet()<0)
+			return -1;
 		if (sockfd < 0) {
 			sleep(3);
 			continue;
 		}
 		if(startAirspy()<0)
-			return (-1);
+			return -1;
 	}
 
       pthread_mutex_lock(&blkmtx);
