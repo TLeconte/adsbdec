@@ -111,7 +111,6 @@ int startAirspy(void)
 	int result;
 
         if(device == NULL) return 0;
-	printf("start airspy\n");
 
         if(airspy_is_streaming(device) == AIRSPY_TRUE)
 		return 0;
@@ -131,8 +130,6 @@ void stopAirspy(void)
 {
   if(device == NULL) return ;
 
-  printf("stop airspy\n");
-
   airspy_stop_rx(device);
 }
 
@@ -141,8 +138,6 @@ void closeAirspy(void)
 {
 
    if(device == NULL) return ;
-
-    printf("close  airspy\n");
 
     airspy_stop_rx(device);
     airspy_close(device);

@@ -119,7 +119,6 @@ static int initNet(void)
 	freeaddrinfo(servinfo);
 
 	if (p == NULL) {
-		fprintf(stderr, "failed to connect\n");
 		return -1;
 	}
 	fprintf(stderr, "connected\n");
@@ -243,7 +242,7 @@ int runOutput(void)
 	if (Rawaddr) {
 		res = write(sockfd, pkt, strlen(pkt));
 		if (res <= 0) {
-				printf("write error\n");
+			fprintf(stderr,"disconnected\n");
 			close(sockfd);
 			sockfd = -1;
 			stopAirspy();
