@@ -70,7 +70,7 @@ void *fileInput(void *arg)
 
 static void usage(void)
 {
-	printf("adsbdec airspy ADSB decoder Copyright (c) 2018 Thierry Leconte  \n\n");
+	printf("adsbdec airspy ADSB decoder 1.0 Copyright (c) 2018 Thierry Leconte  \n\n");
 	printf("usage : adsbdec [-d] [-e] [-m] [-f filename] [-s addr[:port]]\n\n");
 	printf
 	    ("By default receive samples from airspy and output long adsb frames in raw avr format on stdout\n");
