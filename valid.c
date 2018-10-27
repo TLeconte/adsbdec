@@ -139,7 +139,6 @@ int validframe(uint8_t *frame, const int len,const uint64_t ts)
 		return 1;
 	}
 
-	if(crcok) return 0;
 
 	if(errcorr && len == 14 ) {
 		nb = testFix(frame, crc);
@@ -147,7 +146,7 @@ int validframe(uint8_t *frame, const int len,const uint64_t ts)
 			fixChecksum(frame,nb);
 			type = frame[0] >> 3;
 			if( type == 17 || type == 18 ) {
-				if(addaircraft(icao(frame))) {
+				if(addaircraft(icao(frame))){
 					netout(frame, len,ts);
 				}
 				return 1;
@@ -155,6 +154,8 @@ int validframe(uint8_t *frame, const int len,const uint64_t ts)
 			fixChecksum(frame,nb); /* undo fix */
 		}
 	}
+
+	if(crcok) return 0;
 
 	if( type == 11 || type == 17 || type == 18 ) return 0;
 	if( len == 7 && type != 0 && type != 4 && type != 5) return 0;
