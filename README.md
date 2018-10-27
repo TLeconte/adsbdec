@@ -14,11 +14,7 @@ By default receive samples from airspy and output long adsb frames (DF14/17/18/2
 
 ## Example
 
-	On computer connected to airspy :
 > adsbdec -e -s 192.168.0.10:30001
-
-	On another computer at addr 192.168.0.10 :
-> dump1090 --net-only --net-ri-port 30001 
 
 Man could use adsbdec to send data to any other avr format compatible server (VRS, feeders for main adsb web site, etc )
 For VRS select "Push receiver" , "AVR format"
