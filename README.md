@@ -2,14 +2,17 @@
 An ADSB open source decoder for the airspy R2 and mini
 
 ## Usage 
-> adsbdec [-d] [-e] [-f filename] [-s addr[:port]]
+> adsbdec [-d] [-c] [-e] [-m] [-g 0-21] [-f filename] [-s addr[:port]]
 
 By default receive samples from airspy and output long adsb frames (DF14/17/18/20/21/24) in raw avr format on stdout
 
 ## Options
-	-d : output short frame frames too
-	-e : use 1bit error correction
-	-f : input from filename instead of airspy (raw signed 16 bits REAL format 20Mb/s)
+	-d : output short frames too
+	-c : only frame with true crc (DF11/17/18)
+	-e : use 1 bit error correction
+	-m : output avrmlat format (ie : with 12Mhz timestamp)
+	-g 0-21 : set sensibility gain (default 21)
+	-f : input from filename instead of airspy (raw signed 16 bits real format)
 	-s addr[:port] : send ouput via TCP to server at address addr:port (default port : 30001)
 
 ## Example
