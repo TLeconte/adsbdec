@@ -101,24 +101,18 @@ static inline int deqframe(const int idx, const uint64_t sc)
 uint64_t timestamp;
 
 #ifdef AIRSPY_MINI
-const int pshapeI[2*PULSEW]={-4,-4,5,5,-4,-4,-4,-4,5,5,-4,-4};
-const int pshapeQ[2*PULSEW]={4,-4,-5,5,4,-4,4,-4,-5,5,4,-4};
+#define FILTERLEN 7
+const int pshape[FILTERLEN]={4,-4,-5,5,5,-4,-4};
 #else
-const int pshapeI[2*PULSEW]={
-11,12,-16,-16,16,16,-16,-16,12,11,
-11,12,-16,-16,16,16,-16,-16,12,11
-};
-const int pshapeQ[2*PULSEW]={
--11,12,16,-16,-16,16,16,-16,-12,11,
--11,12,16,-16,-16,16,16,-16,-12,11
-};
+#define FILTERLEN 11
+const int pshape[FILTERLEN]={ -9,9,16,-16,-16,16,16,-16,-16,9,9 };
 #endif
 
 void decodeiq(const short *r, const int len)
 {
 	static int inidx = 0;
 	static int needsample = DECOFFSET;
-	static int rbuff[PULSEW];
+	static int rbuff[FILTERLEN];
 
 	int i,j;
 
@@ -126,15 +120,17 @@ void decodeiq(const short *r, const int len)
 		int sumi,sumq;
 		uint32_t off;
 
-		off=timestamp%PULSEW;
+		off=timestamp%FILTERLEN;
 		rbuff[off] = (int)r[i];
 		timestamp++;
 
 		sumi=sumq=0;
-		for(j=0;j<PULSEW;j++) {
-			sumi+=rbuff[j]*pshapeI[j+PULSEW-1-off];
-			sumq+=rbuff[j]*pshapeQ[j+PULSEW-1-off];
+		off++;
+		for(j=0;j<FILTERLEN-1;) {
+			sumq+=rbuff[(off+j)%FILTERLEN]*pshape[j];j++;
+			sumi+=rbuff[(off+j)%FILTERLEN]*pshape[j];j++;
 		}
+		sumq+=rbuff[(off+j)%FILTERLEN]*pshape[j];
                 sumi/=16;sumq/=16;
 
 		amp2buff[inidx++] = (sumi*sumi+sumq*sumq)/8;
