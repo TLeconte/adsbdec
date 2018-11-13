@@ -23,9 +23,9 @@
 #include <libairspy/airspy.h>
 
 #ifdef AIRSPY_MINI
-#define AIR_SAMPLE_RATE 6000000
+#define AIR_SAMPLE_RATE 12000000
 #else
-#define AIR_SAMPLE_RATE 10000000
+#define AIR_SAMPLE_RATE 20000000
 #endif
 
 int gain = 21;
@@ -60,9 +60,10 @@ int initAirspy(void)
 	airspy_get_samplerates(device, &count, 0);
 	supported_samplerates = (uint32_t *) malloc(count * sizeof(uint32_t));
 	airspy_get_samplerates(device, supported_samplerates, count);
-	for (i = 0; i < count; i++)
+	for (i = 0; i < count; i++) {
 		if (supported_samplerates[i] == AIR_SAMPLE_RATE)
 			break;
+	}
 	if (i >= count) {
 		fprintf(stderr, "did not find needed sampling rate\n");
 		airspy_close(device);
