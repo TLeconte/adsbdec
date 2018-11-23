@@ -98,6 +98,10 @@ int initAirspy(void)
 		return -1;
 	}
 
+       /* reduce FI bandwidth */
+        airspy_r820t_write(device, 10, 0xB0 | 15);
+        airspy_r820t_write(device, 11, 0x0 | 6 );
+
 	return 0;
 }
 
