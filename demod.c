@@ -59,7 +59,7 @@ static inline int deqframe(const int idx, const uint64_t sc)
 		lidx = idx - 1 ;
 
 		/* noise estimation */
-		ns = 2*(amp2buff[lidx + PULSEW] + amp2buff[lidx + 8 * PULSEW]); 
+		ns = amp2buff[lidx + PULSEW] + amp2buff[lidx + 3 * PULSEW] + amp2buff[lidx + 8 * PULSEW] + amp2buff[lidx + 10 * PULSEW]; 
 
 		/* s/n test */
 		if ( pv1 < 2 *  ns)  {
