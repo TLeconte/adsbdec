@@ -75,7 +75,7 @@ static void usage(void)
 	printf
 	    ("By default receive samples from airspy and output long adsb frames in raw avr format on stdout\n");
 	printf("Options :\n");
-	printf("\t-d : output short frames too\n");
+	printf("\t-d : output short DF11 frames too\n");
 	printf("\t-c : only frame with true crc (DF11/17/18)\n");
 	printf("\t-e : use 1 bit error correction\n");
 	printf("\t-m : output avrmlat format (ie : with 12Mhz timestamp)\n");
@@ -86,7 +86,7 @@ static void usage(void)
 	printf("\nExample :\n");
 	printf("\t\tadsbdec -e -d -c -s 192.168.0.10:30001\n");
 	printf
-	    ("\nMan could use adsbdec to send data to any other avr format compatible server (VRS, feeders for main adsb web site, etc )\n\n");
+	    ("\nMan could use adsbdec to send data to any avr format compatible server (VRS, feeders for main adsb web site, etc )\n\n");
 
 }
 
