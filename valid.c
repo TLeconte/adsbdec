@@ -147,7 +147,7 @@ int validLong(uint8_t *frame, const uint64_t ts,uint32_t crc)
 		return 1;
 	}
 
-	if(errcorr ) {
+	if(errcorr) {
 		nb = testFix(frame, crc);
 		if( nb >= 0 ) {
 			fixChecksum(frame,nb);
@@ -163,6 +163,9 @@ int validLong(uint8_t *frame, const uint64_t ts,uint32_t crc)
 	}
 
 	if( type == 17 || type == 18 ) return 0;
+
+	if(crcok) return 0;
+
 	if( type != 16  && type != 20 && type != 21 && type  != 24 ) return 0;
 
 	if (findaircraft(crc)) {

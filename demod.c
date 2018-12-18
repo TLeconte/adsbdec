@@ -79,7 +79,7 @@ static inline int deqframe(const int idx, const uint64_t sc)
 
 				if (flen == 7) {
 					crc=CrcShort(frame);
-					if (validShort(frame, sc, CrcEnd(frame,crc,7))) {
+					if (df && validShort(frame, sc, CrcEnd(frame,crc,7))) {
 						pv1=pv2=0;
 						return 128 * PULSEW;
 					}
