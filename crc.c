@@ -18,6 +18,7 @@
  */
 #include <stddef.h>
 #include <inttypes.h>
+#include <crc.h>
 
 
 static const uint32_t crc_table[256] = {
@@ -72,17 +73,35 @@ static const uint32_t error_table[112] = {
 	0x000080, 0x000040, 0x000020, 0x000010, 0x000008, 0x000004, 0x000002, 0x000001
 };
 
-uint32_t Checksum(const uint8_t *frame, const int n)
+uint32_t CrcShort(const uint8_t *frame)
 {
 	uint32_t crc = 0;
-	int i;
 
-	for (i = 0; i < n-3; ++i) {
-		crc = (crc << 8) ^ crc_table[frame[i] ^ (crc >> 16)];
-		crc = crc & 0xffffff;
-	}
+	crc = (crc << 8) ^ crc_table[frame[0] ^ (uint8_t)(crc >> 16)];
+	crc = (crc << 8) ^ crc_table[frame[1] ^ (uint8_t)(crc >> 16)];
+	crc = (crc << 8) ^ crc_table[frame[2] ^ (uint8_t)(crc >> 16)];
+	crc = (crc << 8) ^ crc_table[frame[3] ^ (uint8_t)(crc >> 16)];
 
-	return crc ^ (((uint32_t)frame[n-3]<<16)|((uint32_t)frame[n-2]<<8)|(uint32_t)frame[n-1]);
+	crc = crc & 0xffffff;
+
+	return crc ;
+}
+
+uint32_t CrcLong(const uint8_t *frame,uint32_t crcs)
+{
+	uint32_t crc = crcs;
+
+	crc = (crc << 8) ^ crc_table[frame[4] ^ (uint8_t)(crc >> 16)];
+	crc = (crc << 8) ^ crc_table[frame[5] ^ (uint8_t)(crc >> 16)];
+	crc = (crc << 8) ^ crc_table[frame[6] ^ (uint8_t)(crc >> 16)];
+	crc = (crc << 8) ^ crc_table[frame[7] ^ (uint8_t)(crc >> 16)];
+	crc = (crc << 8) ^ crc_table[frame[8] ^ (uint8_t)(crc >> 16)];
+	crc = (crc << 8) ^ crc_table[frame[9] ^ (uint8_t)(crc >> 16)];
+	crc = (crc << 8) ^ crc_table[frame[10] ^ (uint8_t)(crc >> 16)];
+
+	crc = crc & 0xffffff;
+
+	return crc ;
 }
 
 uint32_t testFix(uint8_t *frame, const uint32_t ecrc)
@@ -106,6 +125,7 @@ void fixChecksum(uint8_t *frame, const uint32_t nb)
 
 #if 0
 #define MLEN 14
+
 void gentable(void )
 {
 	int i, n;
@@ -119,36 +139,49 @@ void gentable(void )
 
 		bit = 1 << (7 - i % 8);
 		frame[i / 8] = bit;
-		crc = Checksum(frame, MLEN);
+		crc=CrcShort(frame);
+		crc=CrcLong(frame,crc);
+		crc=CrcEnd(frame,crc,MLEN);
 		printf("0x%06x\n", crc);
 		frame[i / 8] = 0;
 	}
 }
 
+
 int main()
 {
-	uint8_t frame[16];
+	uint8_t frames[7]={ 0X5D,0X49,0X51,0X49,0XE3,0X33,0X8F};
+	uint8_t frame[14]={ 0X8D,0X48,0X4C,0XB4,0X60,0XB5,0X17,0X4B,0XEB,0XEE,0X6D,0XE4,0X40,0X3C };
 	int i, n, r;
 	uint32_t crc;
 
 //	gentable();
 
+	crc=CrcShort(frames);
+	crc=CrcEnd(frames,crc,7);
+	printf("crc short=%06x\n", crc);
 
-	for (n = 0; n < 16; n++)
-		frame[n] = 0;
+	crc=CrcShort(frame);
+	crc=CrcLong(frame,crc);
+	crc=CrcEnd(frame,crc,MLEN);
+	printf("crc long=%06x\n", crc);
 
-	frame[5] = 0x04;
+	frame[5] ^= 0x04;
 
-	crc = Checksum(frame, MLEN);
-	printf("crc=%06x\n", crc);
+	crc=CrcShort(frame);
+	crc=CrcLong(frame,crc);
+	crc=CrcEnd(frame,crc,MLEN);
+	printf("crc error=%06x\n", crc);
 
 	r = testFix(frame, crc);
-	printf("r=%d\n", r);
+	printf("error bit=%d\n", r);
 
 	fixChecksum(frame,r);
 
-	crc = Checksum(frame, MLEN);
-	printf("ccrc=%06x\n", crc);
+	crc=CrcShort(frame);
+	crc=CrcLong(frame,crc);
+	crc=CrcEnd(frame,crc,MLEN);
+	printf("crc corrected=%06x\n", crc);
 
 
 }

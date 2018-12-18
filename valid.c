@@ -121,33 +121,40 @@ static inline uint32_t icao(uint8_t *frame)
 	return (frame[1]<<16)|(frame[2]<<8)|frame[3];
 }
 
-int validframe(uint8_t *frame, const int len,const uint64_t ts)
+int validShort(uint8_t *frame,const uint64_t ts,uint32_t crc)
 {
-	uint32_t crc;
-	uint32_t type;
+	uint32_t type = frame[0] >> 3;
+
+	if( (crc & 0xffff80) == 0 && type==11 ) {
+		if (addaircraft(icao(frame))) {
+			netout(frame, 7,ts);
+		}
+		return 1;
+	}
+	return 0;
+}
+
+int validLong(uint8_t *frame, const uint64_t ts,uint32_t crc)
+{
+	uint32_t type = frame[0] >> 3;
 	int nb;
 
-	type = frame[0] >> 3;
-	crc = Checksum(frame, len);
-
-	/* no error case */
-	if((crc==0 && len == 14 && (type==17 || type==18)) ||
-	   ((crc & 0xffff80) == 0 && len == 7 && type==11)) {
-		if (addaircraft(icao(frame))) {
-			netout(frame, len,ts);
+	/* no error DF17/18 case */
+	if(crc==0 && (type==17 || type==18)) {
+		if(addaircraft(icao(frame))){
+			netout(frame, 14,ts);
 		}
 		return 1;
 	}
 
-
-	if(errcorr && len == 14 ) {
+	if(errcorr ) {
 		nb = testFix(frame, crc);
 		if( nb >= 0 ) {
 			fixChecksum(frame,nb);
 			type = frame[0] >> 3;
 			if( type == 17 || type == 18 ) {
 				if(addaircraft(icao(frame))){
-					netout(frame, len,ts);
+					netout(frame, 14,ts);
 				}
 				return 1;
 			}
@@ -155,14 +162,11 @@ int validframe(uint8_t *frame, const int len,const uint64_t ts)
 		}
 	}
 
-	if(crcok) return 0;
-
-	if( type == 11 || type == 17 || type == 18 ) return 0;
-	if( len == 7 && type != 0 && type != 4 && type != 5) return 0;
-	if(len == 14  && type != 16  && type != 20 && type != 21 && type  != 24 ) return 0;
+	if( type == 17 || type == 18 ) return 0;
+	if( type != 16  && type != 20 && type != 21 && type  != 24 ) return 0;
 
 	if (findaircraft(crc)) {
-		netout(frame, len,ts);
+		netout(frame, 14,ts);
 		return 1;
 	}
 

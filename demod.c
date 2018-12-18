@@ -20,10 +20,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
+#include "crc.h"
 
 int df = 0;
 
-extern int validframe(uint8_t *frame, const int len,const uint64_t ts);
+extern int validShort(uint8_t *frame,const uint64_t ts,uint32_t crc);
+extern int validLong(uint8_t *frame, const uint64_t ts,uint32_t crc);
 
 #ifdef AIRSPY_MINI
 #define PULSEW 6
@@ -51,6 +53,7 @@ static inline int deqframe(const int idx, const uint64_t sc)
 	if (pv1 > pv0 && pv1 > pv2) 
 	{
 		uint8_t frame[14];
+		uint32_t crc;
 		int flen = 0;
 		uint8_t bits = 0;
 		int k;
@@ -74,8 +77,9 @@ static inline int deqframe(const int idx, const uint64_t sc)
 				bits = 0;
 				flen++;
 
-				if (df && flen == 7) {
-					if (validframe(frame, flen, sc)) {
+				if (flen == 7) {
+					crc=CrcShort(frame);
+					if (validShort(frame, sc, CrcEnd(frame,crc,7))) {
 						pv1=pv2=0;
 						return 128 * PULSEW;
 					}
@@ -89,7 +93,8 @@ static inline int deqframe(const int idx, const uint64_t sc)
 		}
 		frame[flen] = bits;
 		flen++;
-		if (validframe(frame, flen,sc)) {
+		crc=CrcLong(frame,crc);
+		if (validLong(frame,sc, CrcEnd(frame,crc,14))) {
 			pv1=pv2=0;
 			return 240 * PULSEW;
 		}
