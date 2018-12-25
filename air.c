@@ -20,7 +20,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
+#include <fcntl.h>
+#include <time.h>
 #include <libairspy/airspy.h>
+#include "adsbdec.h"
 
 #ifdef AIRSPY_MINI
 #define AIR_SAMPLE_RATE 12000000
@@ -30,7 +34,61 @@
 
 int gain = 21;
 
-extern void decodeiq(short *iq, int len);
+#define APBUFFSZ (1024*PULSEW)
+uint32_t amp2buff[APBUFFSZ];
+
+#define DECOFFSET (255*PULSEW)
+static uint64_t timestamp;
+
+extern void handlerExit(int sig);
+extern int deqframe(const int idx, const uint64_t sc);
+
+#ifdef AIRSPY_MINI
+#define FILTERLEN 7
+static const int pshape[FILTERLEN]={4,-4,-5,5,5,-4,-4};
+#else
+#define FILTERLEN 11
+static const int pshape[FILTERLEN]={ -9,9,16,-16,-16,16,16,-16,-16,9,9 };
+#endif
+
+static void decodeiq(const short *r, const int len)
+{
+	static int inidx = 0;
+	static int needsample = DECOFFSET;
+	static int rbuff[FILTERLEN];
+
+	int i,j;
+
+	for (i = 0; i < len; i++) {
+		int sumi,sumq;
+		uint32_t off;
+
+		off=timestamp%FILTERLEN;
+		rbuff[off] = (int)r[i];
+		timestamp++;
+
+		sumi=sumq=0;
+		off++;
+		for(j=0;j<FILTERLEN-1;) {
+			sumq+=rbuff[(off+j)%FILTERLEN]*pshape[j];j++;
+			sumi+=rbuff[(off+j)%FILTERLEN]*pshape[j];j++;
+		}
+		sumq+=rbuff[(off+j)%FILTERLEN]*pshape[j];
+                sumi/=16;sumq/=16;
+
+		amp2buff[inidx++] = (sumi*sumi+sumq*sumq)/8;
+
+		if(inidx==APBUFFSZ) {
+			memcpy(amp2buff,&(amp2buff[APBUFFSZ-PULSEW-DECOFFSET]),(DECOFFSET+PULSEW)*sizeof(int));
+			inidx=DECOFFSET+PULSEW;
+		}	
+
+		needsample--;
+		if (needsample == 0)
+			needsample = deqframe(inidx-DECOFFSET, timestamp );
+	}
+}
+
 
 static struct airspy_device *device = NULL;
 
@@ -39,6 +97,7 @@ int initAirspy(void)
 	int result;
 	uint32_t i, count;
 	uint32_t *supported_samplerates;
+	struct timespec tp;
 
 	/* init airspy */
 	result = airspy_open(&device);
@@ -102,6 +161,14 @@ int initAirspy(void)
         airspy_r820t_write(device, 10, 0xB0 | 15);
         airspy_r820t_write(device, 11, 0x0 | 6 );
 
+	/* just to init timestamp to something */
+       	clock_gettime(CLOCK_REALTIME, &tp);
+#ifdef AIRSPY_MINI
+	timestamp=tp.tv_sec*12000000LL+tp.tv_nsec/83; /* 12Mb/s clock */
+#else
+	timestamp=tp.tv_sec*20000000LL+tp.tv_nsec/50; /* 20Mb/s clock */
+#endif
+
 	return 0;
 }
 
@@ -148,3 +215,35 @@ void closeAirspy(void)
     airspy_close(device);
 
 }
+
+char *filename = NULL;
+#define IQBUFFSZ (1024*1024)
+void *fileInput(void *arg)
+{
+	int fd;
+	short *iqbuff;
+
+	fd = open(filename, O_RDONLY);
+	if (fd < 0) {
+		handlerExit(0);
+		return NULL;
+	}
+
+	iqbuff = (short *)malloc(IQBUFFSZ * sizeof(short));
+
+	do {
+		int n;
+
+		n = read(fd, iqbuff, IQBUFFSZ * sizeof(short));
+		if (n <= 0)
+			break;
+
+		decodeiq(iqbuff, n / 2);
+
+	} while (1);
+
+	close(fd);
+	handlerExit(0);
+	return NULL;
+}
+

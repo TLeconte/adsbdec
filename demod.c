@@ -21,22 +21,18 @@
 #include <string.h>
 #include <inttypes.h>
 #include "crc.h"
+#include "adsbdec.h"
 
 int df = 0;
 
 extern int validShort(uint8_t *frame,const uint64_t ts,uint32_t crc);
 extern int validLong(uint8_t *frame, const uint64_t ts,uint32_t crc);
 
-#ifdef AIRSPY_MINI
-#define PULSEW 6
-#else
-#define PULSEW 10
-#endif
 
 #define APBUFFSZ (1024*PULSEW)
-static uint32_t amp2buff[APBUFFSZ];
+extern uint32_t amp2buff[APBUFFSZ];
 
-static inline int deqframe(const int idx, const uint64_t sc)
+int deqframe(const int idx, const uint64_t sc)
 {
 	static uint32_t pv0, pv1, pv2;
 	int lidx=idx;
@@ -102,51 +98,4 @@ static inline int deqframe(const int idx, const uint64_t sc)
 	return 1;
 }
 
-#define DECOFFSET (255*PULSEW)
-uint64_t timestamp;
 
-#ifdef AIRSPY_MINI
-#define FILTERLEN 7
-const int pshape[FILTERLEN]={4,-4,-5,5,5,-4,-4};
-#else
-#define FILTERLEN 11
-const int pshape[FILTERLEN]={ -9,9,16,-16,-16,16,16,-16,-16,9,9 };
-#endif
-
-void decodeiq(const short *r, const int len)
-{
-	static int inidx = 0;
-	static int needsample = DECOFFSET;
-	static int rbuff[FILTERLEN];
-
-	int i,j;
-
-	for (i = 0; i < len; i++) {
-		int sumi,sumq;
-		uint32_t off;
-
-		off=timestamp%FILTERLEN;
-		rbuff[off] = (int)r[i];
-		timestamp++;
-
-		sumi=sumq=0;
-		off++;
-		for(j=0;j<FILTERLEN-1;) {
-			sumq+=rbuff[(off+j)%FILTERLEN]*pshape[j];j++;
-			sumi+=rbuff[(off+j)%FILTERLEN]*pshape[j];j++;
-		}
-		sumq+=rbuff[(off+j)%FILTERLEN]*pshape[j];
-                sumi/=16;sumq/=16;
-
-		amp2buff[inidx++] = (sumi*sumi+sumq*sumq)/8;
-
-		if(inidx==APBUFFSZ) {
-			memcpy(amp2buff,&(amp2buff[APBUFFSZ-PULSEW-DECOFFSET]),(DECOFFSET+PULSEW)*sizeof(int));
-			inidx=DECOFFSET+PULSEW;
-		}	
-
-		needsample--;
-		if (needsample == 0)
-			needsample = deqframe(inidx-DECOFFSET, timestamp );
-	}
-}

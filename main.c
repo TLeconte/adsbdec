@@ -19,54 +19,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include <signal.h>
-#include <time.h>
+
 
 extern char *Rawaddr;
 extern int outformat;
-
+extern char *filename;
 extern int gain;
-extern unsigned long int timestamp;
+extern int df, errcorr,crcok;
 
 extern int runOutput(void);
 extern void handlerExit(int sig);
-
-extern int df, errcorr,crcok;
-extern void decodeiq(short *iq, int len);
-
-char *filename = NULL;
-
-
-#define IQBUFFSZ (1024*1024)
-void *fileInput(void *arg)
-{
-	int fd;
-	short *iqbuff;
-
-	fd = open(filename, O_RDONLY);
-	if (fd < 0) {
-		handlerExit(0);
-		return NULL;
-	}
-
-	iqbuff = (short *)malloc(IQBUFFSZ * sizeof(short));
-
-	do {
-		int n;
-
-		n = read(fd, iqbuff, IQBUFFSZ * sizeof(short));
-		if (n <= 0)
-			break;
-
-		decodeiq(iqbuff, n / 2);
-
-	} while (1);
-
-	close(fd);
-	handlerExit(0);
-	return NULL;
-}
 
 static void usage(void)
 {
@@ -94,7 +57,7 @@ int main(int argc, char **argv)
 {
 	int c,res;
 	struct sigaction sigact;
-	struct timespec tp;
+
 
 	while ((c = getopt(argc, argv, "cf:s:g:dem")) != EOF) {
 		switch (c) {
@@ -117,14 +80,6 @@ int main(int argc, char **argv)
 			errcorr = 1;
 			break;
 		case 'm':
-			/* just to init timestamp to something */
-       			clock_gettime(CLOCK_REALTIME, &tp);
-#ifdef AIRSPY_MINI
-			timestamp=tp.tv_sec*12000000LL+tp.tv_nsec/83; /* 12Mb/s clock */
-#else
-			timestamp=tp.tv_sec*20000000LL+tp.tv_nsec/50; /* 20Mb/s clock */
-#endif
-
 			outformat = 1;
 			break;
 		default:

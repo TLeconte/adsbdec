@@ -22,19 +22,13 @@
 #include <inttypes.h>
 #include <time.h>
 #include "crc.h"
+#include "aircraft.h"
 
 extern void netout(const uint8_t *frame, const int len, const uint64_t ts);
 
 int errcorr = 0;
 int crcok = 0;
 
-typedef struct aircraft_s aircraft_t;
-struct aircraft_s {
-	uint32_t AA;
-	int cnt;
-	time_t t;
-	aircraft_t *next;
-} ;
 static aircraft_t *ahead=NULL;
 #define DT 60
 
@@ -54,21 +48,21 @@ static void delaircraft(aircraft_t *prev,aircraft_t *curr)
 	}
 }
 
-static int addaircraft(uint32_t aa)
+static int addaircraft(uint32_t addr)
 {
 	aircraft_t *curr=ahead;
 	aircraft_t *prev=NULL;
 	int t=time(NULL);
 	int res;
 
-	if(aa==0) return 0;
+	if(addr==0) return 0;
 
 	while(curr) {
-		if(curr->AA==aa) {
+		if(curr->addr==addr) {
 			if(prev) prev->next=curr->next;
 			break;
 		}
-		if(curr->t+DT < t) {
+		if(curr->seen+DT < t) {
 			delaircraft(prev,curr);
 			curr=NULL;
 			break;;
@@ -78,8 +72,8 @@ static int addaircraft(uint32_t aa)
 	}
 	if(curr==NULL) {
 		curr=malloc(sizeof(aircraft_t));
-		curr->AA=aa;
-		curr->cnt=0;
+		curr->addr=addr;
+		curr->messages=0;
 		res=0;
 	} else 
 		res = 1;
@@ -87,26 +81,26 @@ static int addaircraft(uint32_t aa)
 		curr->next=ahead;
 		ahead=curr;
 	}
-	curr->t=t;
-	curr->cnt++;
+	curr->seen=t;
+	curr->messages++;
 
 	return res;
 }
 
-static int findaircraft(uint32_t aa)
+static int findaircraft(uint32_t addr)
 {
 	aircraft_t *curr=ahead;
 	aircraft_t *prev=NULL;
 	int t=time(NULL);
 
-	if(aa==0) return 0;
+	if(addr==0) return 0;
 
 	while(curr) {
-		if(curr->AA==aa && curr->cnt>1 ) {
-			curr->cnt++;
+		if(curr->addr==addr && curr->messages>1 ) {
+			curr->messages++;
 			return 1;
 		}
-		if(curr->t+DT < t) {
+		if(curr->seen+DT < t) {
 			delaircraft(prev,curr);
 			return 0;
 		}
