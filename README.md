@@ -23,8 +23,9 @@ By default receive samples from airspy and output long adsb frames (DF14/17/18/2
 Man could use adsbdec to send data to any other avr format compatible server (VRS, feeders for main adsb web site, etc )
 For VRS select "Push receiver" , "AVR format"
 
-You could use netcat , if you need to act as server :
-> adsbdec -e | netcat -l 127.0.0.1 30002
+if you need that adsbdec act as server (like dump1090) :
+
+> adsbdec -e -l 192.168.0.10:30002
 
 ## Compile
 
