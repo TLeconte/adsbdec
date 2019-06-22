@@ -35,6 +35,7 @@ extern void *fileInput(void *arg);
 
 
 char *Rawaddr = NULL;
+int outmode = 0;
 int outformat;
 
 static int sockfd = -1;
@@ -64,6 +65,8 @@ static int initNet(void)
 	if(Rawaddr==NULL)
 		return -1;
 
+	if(outmode == 1 ) {
+	} 
 	Caddr=strdup(Rawaddr);
 
 	memset(&hints, 0, sizeof hints);
@@ -79,7 +82,7 @@ static int initNet(void)
 		*port = 0;
 		port++;
 		if (*port != ':')
-			port = "30001";
+			port = (outmode==1)?"30001":"30002";
 		else
 			port++;
 	} else {
@@ -87,7 +90,7 @@ static int initNet(void)
 		addr = Caddr;
 		port = strstr(addr, ":");
 		if (port == NULL)
-			port = "30001";
+			port = (outmode==1)?"30001":"30002";
 		else {
 			*port = 0;
 			port++;
@@ -104,14 +107,39 @@ static int initNet(void)
 	free(Caddr);
 
 	for (p = servinfo; p != NULL; p = p->ai_next) {
-		if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
+		int lsock;
+
+		if ((lsock = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
 			continue;
 		}
 
-		if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-			close(sockfd);
-			sockfd=-1;
-			continue;
+		if(outmode == 1) {
+			if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+				close(sockfd);
+				sockfd=-1;
+				continue;
+			}
+			fprintf(stderr, "connected\n");
+		}
+
+		if(outmode == 2) {
+			if (bind(lsock, p->ai_addr, p->ai_addrlen) == -1) {
+				close(lsock);
+				continue;
+			}
+
+			if (listen(lsock, 0) == -1) {
+				close(lsock);
+				continue;
+			}
+	
+			sockfd=accept(lsock,NULL,NULL);
+			if(sockfd == -1) {
+				close(lsock);
+				sockfd=-1;
+				continue;
+			}
+			close(lsock);
 		}
 		break;
 	}
@@ -121,7 +149,6 @@ static int initNet(void)
 	if (p == NULL) {
 		return 1;
 	}
-	fprintf(stderr, "connected\n");
 
 	return 0;
 }
@@ -188,7 +215,7 @@ int runOutput(void)
 	return -1;
     }
 
-    if (Rawaddr==NULL) 
+    if (outmode) 
 	if(startAirspy()<0)
 		return -1;
 
@@ -197,7 +224,7 @@ int runOutput(void)
 	if(do_exit) 
 		break;
 
-        if (Rawaddr && sockfd < 0) {
+        if (outmode && sockfd < 0) {
 		if(initNet()<0)
 			return -1;
 		if (sockfd < 0) {
@@ -240,7 +267,7 @@ int runOutput(void)
 	}
 	strcat(pkt, ";\n");
 
-	if (Rawaddr) {
+	if (outmode) {
 		res = write(sockfd, pkt, strlen(pkt));
 		if (res <= 0) {
 			fprintf(stderr,"disconnected\n");
