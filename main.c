@@ -47,10 +47,6 @@ static void usage(void)
 	printf("\t-f : input from filename instead of airspy (raw signed 16 bits real format)\n");
 	printf ("\t-s addr[:port] : send ouput via TCP to server at address addr:port (default port : 30001)\n");
 	printf ("\t-l addr[:port] : listen to addr:port (default port : 30002) and accept a TCP connection where to send output \n");
-	printf("\nExample :\n");
-	printf("\t\tadsbdec -e -d -c -s 192.168.0.10:30001\n");
-	printf
-	    ("\nMan could use adsbdec to send data to any avr format compatible server (VRS, feeders for main adsb web site, etc )\n\n");
 
 }
 
