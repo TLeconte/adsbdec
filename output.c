@@ -65,8 +65,6 @@ static int initNet(void)
 	if(Rawaddr==NULL)
 		return -1;
 
-	if(outmode == 1 ) {
-	} 
 	Caddr=strdup(Rawaddr);
 
 	memset(&hints, 0, sizeof hints);
@@ -114,11 +112,12 @@ static int initNet(void)
 		}
 
 		if(outmode == 1) {
-			if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-				close(sockfd);
+			if (connect(lsock, p->ai_addr, p->ai_addrlen) == -1) {
+				close(lsock);
 				sockfd=-1;
 				continue;
 			}
+			sockfd=lsock;
 			fprintf(stderr, "connected\n");
 		}
 
@@ -128,7 +127,7 @@ static int initNet(void)
 				continue;
 			}
 
-			if (listen(lsock, 0) == -1) {
+			if (listen(lsock, 1) == -1) {
 				close(lsock);
 				continue;
 			}
@@ -140,6 +139,7 @@ static int initNet(void)
 				continue;
 			}
 			close(lsock);
+			fprintf(stderr, "connected\n");
 		}
 		break;
 	}
@@ -213,11 +213,10 @@ int runOutput(void)
     } else {
      if(initAirspy()<0)
 	return -1;
+     if(startAirspy()<0)
+	return -1;
     }
 
-    if (outmode) 
-	if(startAirspy()<0)
-		return -1;
 
    do {
 
