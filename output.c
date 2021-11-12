@@ -197,11 +197,60 @@ static void freelist(void)
    pthread_mutex_unlock(&blkmtx);
 }
 
+void formatpkt(blk_t *blk,char *pkt)
+{
+    int i,o;
+    char *p;
+    char ch;
+
+    p=pkt;
+    switch (outformat) {
+	case 0:
+		sprintf(pkt, "*");
+		o = 1;
+		break;
+	case 1:
+#ifdef AIRSPY_MINI
+		sprintf(pkt, "@%012" PRIX64, blk->ts & 0xffffffffffff);
+#else
+		sprintf(pkt, "@%012" PRIX64, (12*(blk->ts & 0xffffffffffffff)/20) & 0xffffffffffff);
+#endif
+		o = 13;
+		break;
+	default:
+		o=0;
+		*p++ = 0x1a;
+		if(blk->len==7) *p++ = '2'; else *p++ = '3';	// msg type
+		for(i=40;i>=0;i-=8) {
+			*p++ = (ch = (blk->ts >> i));
+			if (0x1a == ch) {
+        			*p++ = ch;
+    			}
+		}
+		*p++ = 128;  // false level
+		break;
+      }
+
+      if(outformat<2)  {
+      	for (i = 0; i < blk->len; i++) {
+			sprintf(&(pkt[2 * i + o]), "%02X", blk->frame[i]);
+      	}
+      	strcat(pkt, ";\n");
+     } else {
+        for(i=0;i<blk->len;i++) {
+                *p++ = (ch = blk->frame[i]);
+                if (0x1a == ch) {
+                        *p++ = ch;
+                }
+        }
+     }
+}
+
 int runOutput(void)
 {
    blk_t *blk;
-   char pkt[50];
-   int i, o, res;
+   char pkt[256];
+   int res;
 
    pthread_mutex_init(&blkmtx, NULL);
    pthread_cond_init(&blkwcd, NULL);
@@ -249,24 +298,9 @@ int runOutput(void)
 
       pthread_mutex_unlock(&blkmtx);
 
-      if (outformat) {
-#ifdef AIRSPY_MINI
-		sprintf(pkt, "@%012" PRIX64, blk->ts & 0xffffffffffff);
-#else
-		sprintf(pkt, "@%012" PRIX64, (12*(blk->ts & 0xffffffffffffff)/20) & 0xffffffffffff);
-#endif
-		o = 13;
-      } else {
-		sprintf(pkt, "*");
-		o = 1;
-        }
+      formatpkt(blk,pkt);
 
-	for (i = 0; i < blk->len; i++) {
-		sprintf(&(pkt[2 * i + o]), "%02X", blk->frame[i]);
-	}
-	strcat(pkt, ";\n");
-
-	if (outmode) {
+      if (outmode) {
 		res = write(sockfd, pkt, strlen(pkt));
 		if (res <= 0) {
 			fprintf(stderr,"disconnected\n");
@@ -280,7 +314,7 @@ int runOutput(void)
 		fflush(stdout);
 	}
 
-      free(blk);
+     free(blk);
    } while (1);
 
    closeAirspy();
