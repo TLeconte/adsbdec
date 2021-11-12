@@ -48,7 +48,8 @@ extern int deqframe(const int idx, const uint64_t sc);
 static const int pshape[FILTERLEN]={4,-4,-5,5,5,-4,-4};
 #else
 #define FILTERLEN 11
-static const int pshape[FILTERLEN]={ -9,9,16,-16,-16,16,16,-16,-16,9,9 };
+//static const int pshape[FILTERLEN]={ -9,9,16,-16,-16,16,16,-16,-16,9,9 };
+static const short pshape[FILTERLEN]={ 296,-157,1294,-4359,-7719,9199,7719,-4359,-1294,-157,-296 };
 #endif
 
 static void decodeiq(const short *r, const int len)
@@ -74,7 +75,7 @@ static void decodeiq(const short *r, const int len)
 			sumi+=rbuff[(off+j)%FILTERLEN]*pshape[j];j++;
 		}
 		sumq+=rbuff[(off+j)%FILTERLEN]*pshape[j];
-                sumi/=16;sumq/=16;
+		sumi/=16384;sumq/=16384;
 
 		amp2buff[inidx++] = (sumi*sumi+sumq*sumq)/8;
 
