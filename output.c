@@ -197,9 +197,9 @@ static void freelist(void)
    pthread_mutex_unlock(&blkmtx);
 }
 
-void formatpkt(blk_t *blk,char *pkt)
+int formatpkt(blk_t *blk,char *pkt)
 {
-    int i,o;
+    int i,o,len;
     char *p;
     char ch;
 
@@ -236,6 +236,7 @@ void formatpkt(blk_t *blk,char *pkt)
 			sprintf(&(pkt[2 * i + o]), "%02X", blk->frame[i]);
       	}
       	strcat(pkt, ";\n");
+	len=strlen(pkt);
      } else {
         for(i=0;i<blk->len;i++) {
                 *p++ = (ch = blk->frame[i]);
@@ -243,14 +244,17 @@ void formatpkt(blk_t *blk,char *pkt)
                         *p++ = ch;
                 }
         }
+	len=p-pkt;
      }
+
+     return len;
 }
 
 int runOutput(void)
 {
    blk_t *blk;
    char pkt[256];
-   int res;
+   int res,len;
 
    pthread_mutex_init(&blkmtx, NULL);
    pthread_cond_init(&blkwcd, NULL);
@@ -298,16 +302,20 @@ int runOutput(void)
 
       pthread_mutex_unlock(&blkmtx);
 
-      formatpkt(blk,pkt);
+      len=formatpkt(blk,pkt);
 
       if (outmode) {
-		res = write(sockfd, pkt, strlen(pkt));
-		if (res <= 0) {
-			fprintf(stderr,"disconnected\n");
-			close(sockfd);
-			sockfd = -1;
-			stopAirspy();
-			freelist();
+		while(len) {
+			res = write(sockfd, pkt, len);
+			if (res <= 0) {
+				fprintf(stderr,"disconnected\n");
+				close(sockfd);
+				sockfd = -1;
+				stopAirspy();
+				freelist();
+				break;
+			}
+			len-=res;
 		}
 	} else {
 		fwrite(pkt, strlen(pkt), 1, stdout);
