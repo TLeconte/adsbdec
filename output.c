@@ -46,6 +46,7 @@ struct blk_s {
         uint8_t frame[112];
         int len;
         uint64_t ts;
+	u_char lvl;
         blk_t *next;
 };
 static blk_t *blkhead;
@@ -153,7 +154,7 @@ static int initNet(void)
 	return 0;
 }
 
-void netout(const uint8_t *frame, const int len, const uint64_t ts)
+void netout(const uint8_t *frame, const int len, const uint64_t ts,const u_char lvl)
 {
    blk_t *blk;
 
@@ -162,6 +163,7 @@ void netout(const uint8_t *frame, const int len, const uint64_t ts)
    memcpy(blk->frame,frame,len);
    blk->len=len;
    blk->ts=ts;
+   blk->lvl=lvl;
    blk->next=NULL;
 	
    pthread_mutex_lock(&blkmtx);
@@ -227,7 +229,7 @@ int formatpkt(blk_t *blk,char *pkt)
         			*p++ = ch;
     			}
 		}
-		*p++ = 128;  // false level
+		*p++ = blk->lvl; 
 		break;
       }
 

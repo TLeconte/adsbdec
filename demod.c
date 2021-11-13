@@ -25,8 +25,8 @@
 
 int df = 0;
 
-extern int validShort(uint8_t *frame,const uint64_t ts,uint32_t crc);
-extern int validLong(uint8_t *frame, const uint64_t ts,uint32_t crc);
+extern int validShort(uint8_t *frame,const uint64_t ts,uint32_t crc,u_char lvl);
+extern int validLong(uint8_t *frame, const uint64_t ts,uint32_t crc,u_char lvl);
 
 
 #define APBUFFSZ (1024*PULSEW)
@@ -54,6 +54,9 @@ int deqframe(const int idx, const uint64_t sc)
 		uint8_t bits = 0;
 		int k;
 		int ns;
+		u_char lvl;
+
+		if(pv1 > 255<<13) lvl=255; else lvl=pv1>>13;
 
 		lidx = idx - 1 ;
 
@@ -75,7 +78,7 @@ int deqframe(const int idx, const uint64_t sc)
 
 				if (flen == 7) {
 					crc=CrcShort(frame);
-					if (df && validShort(frame, sc, CrcEnd(frame,crc,7))) {
+					if (df && validShort(frame, sc, CrcEnd(frame,crc,7),lvl)) {
 						pv1=pv2=0;
 						return 128 * PULSEW;
 					}
@@ -90,7 +93,7 @@ int deqframe(const int idx, const uint64_t sc)
 		frame[flen] = bits;
 		flen++;
 		crc=CrcLong(frame,crc);
-		if (validLong(frame,sc, CrcEnd(frame,crc,14))) {
+		if (validLong(frame,sc, CrcEnd(frame,crc,14),lvl)) {
 			pv1=pv2=0;
 			return 240 * PULSEW;
 		}
