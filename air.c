@@ -32,7 +32,7 @@
 #define AIR_SAMPLE_RATE 20000000
 #endif
 
-int gain = 21;
+int gain = 18;
 
 #define APBUFFSZ (1024*PULSEW)
 uint32_t amp2buff[APBUFFSZ];
