@@ -53,7 +53,7 @@ int deqframe(const int idx, const uint64_t sc)
 		int ns;
 		u_char lvl;
 
-		if(pv1 > 255<<13) lvl=255; else lvl=pv1>>13;
+		if(pv1 > 255<<17) lvl=255; else lvl=pv1>>17;
 
 		lidx = idx - 1 ;
 
@@ -64,7 +64,6 @@ int deqframe(const int idx, const uint64_t sc)
 		if (pv1 < 2*ns)  {
 			return 1;
 		}
-
 
 		/* decode each bit */
 		for (k = 0; k < 112; k++) {
