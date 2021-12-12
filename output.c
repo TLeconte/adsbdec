@@ -212,11 +212,7 @@ int formatpkt(blk_t *blk,char *pkt)
 		o = 1;
 		break;
 	case 1:
-#ifdef AIRSPY_MINI
-		sprintf(pkt, "@%012" PRIX64, blk->ts & 0xffffffffffff);
-#else
 		sprintf(pkt, "@%012" PRIX64, (12*(blk->ts & 0xffffffffffffff)/20) & 0xffffffffffff);
-#endif
 		o = 13;
 		break;
 	default:

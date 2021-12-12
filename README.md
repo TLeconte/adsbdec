@@ -1,5 +1,5 @@
 # Adsbdec
-An ADSB open source decoder for the airspy R2 and mini
+An ADSB open source decoder for the airspy R2
 
 ## Usage 
 > adsbdec [-d] [-c] [-e] [-m] [-g 0-21] [-f filename] [-s addr[:port]]
@@ -17,29 +17,22 @@ By default receive samples from airspy and output long adsb frames (DF14/17/18/2
 	-s addr[:port] : send ouput via TCP to server at address addr:port (default port : 30001)
 	-l addr[:port] : listen to addr:port (default port : 30002) and accept a TCP connection where to send output 
 
+Man could use adsbdec to send data to any other avr format compatible server (VRS, feeders for main adsb web site, etc )
+
 ## Example
 
+For VRS select "Push receiver" , "AVR format", and :
 > adsbdec -e -s 192.168.0.10:30001
 
-Man could use adsbdec to send data to any other avr format compatible server (VRS, feeders for main adsb web site, etc )
-For VRS select "Push receiver" , "AVR format"
+To directly feed to adsbexchange (without mlat) :
+> adsbdec -b -s feed.adsbexchange.com:30005
 
-if you need that adsbdec act as server (like dump1090) :
-
+If you need that adsbdec act as server (like dump1090) :
 > adsbdec -e -l 192.168.0.10:30002
 
 ## Compile
 
    Need libusb and libairspy
 
-### For airspy R2 
-
-	Just do
+  Just do
 > make
-
-
-### For airspy mini
-
-	Edit Makefile to add -D AIRSPY_MINI (follow instructions in Makefile), then 
-> make
-

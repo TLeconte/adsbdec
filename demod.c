@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
+#include <math.h>
 #include "crc.h"
 #include "adsbdec.h"
 
@@ -27,10 +28,6 @@ int df = 0;
 
 extern int validShort(uint8_t *frame,const uint64_t ts,uint32_t crc,u_char lvl);
 extern int validLong(uint8_t *frame, const uint64_t ts,uint32_t crc,u_char lvl);
-
-
-#define APBUFFSZ (1024*PULSEW)
-extern uint32_t amp2buff[APBUFFSZ];
 
 int deqframe(const int idx, const uint64_t sc)
 {
@@ -42,8 +39,8 @@ int deqframe(const int idx, const uint64_t sc)
 
 	/* preamble power */
 	pv2 =
-	    amp2buff[idx] + amp2buff[idx + 2 * PULSEW] +
-	     amp2buff[idx + 7 * PULSEW] + amp2buff[idx + 9 * PULSEW];
+	    ampbuff[idx] + ampbuff[idx + 2 * PULSEW] +
+	     ampbuff[idx + 7 * PULSEW] + ampbuff[idx + 9 * PULSEW];
 
 	/* peak detection */
 	if (pv1 > pv0 && pv1 > pv2) 
@@ -61,10 +58,10 @@ int deqframe(const int idx, const uint64_t sc)
 		lidx = idx - 1 ;
 
 		/* noise estimation */
-		ns = amp2buff[lidx + PULSEW] + amp2buff[lidx + 3 * PULSEW] + amp2buff[lidx + 8 * PULSEW] + amp2buff[lidx + 10 * PULSEW]; 
+		ns = ampbuff[lidx + PULSEW] + ampbuff[lidx + 3 * PULSEW] + ampbuff[lidx + 8 * PULSEW] + ampbuff[lidx + 10 * PULSEW]; 
 
 		/* s/n test */
-		if ( pv1 < 2 * ns)  {
+		if (pv1 < ns)  {
 			return 1;
 		}
 
@@ -86,8 +83,8 @@ int deqframe(const int idx, const uint64_t sc)
 			}
 
 			bits = bits << 1;
-			if (amp2buff[lidx + (16 + 2 * k) * PULSEW] >
-			    amp2buff[lidx + (17 + 2 * k) * PULSEW])
+			if (ampbuff[lidx + (16 + 2 * k) * PULSEW] >
+			    ampbuff[lidx + (17 + 2 * k) * PULSEW])
 				bits |= 1;
 		}
 		frame[flen] = bits;

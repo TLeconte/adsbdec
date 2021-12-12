@@ -26,16 +26,10 @@
 #include <libairspy/airspy.h>
 #include "adsbdec.h"
 
-#ifdef AIRSPY_MINI
-#define AIR_SAMPLE_RATE 12000000
-#else
 #define AIR_SAMPLE_RATE 20000000
-#endif
 
 int gain = 18;
-
-#define APBUFFSZ (1024*PULSEW)
-uint32_t amp2buff[APBUFFSZ];
+int32_t ampbuff[APBUFFSZ];
 
 #define DECOFFSET (255*PULSEW)
 static uint64_t timestamp;
@@ -43,14 +37,7 @@ static uint64_t timestamp;
 extern void handlerExit(int sig);
 extern int deqframe(const int idx, const uint64_t sc);
 
-#ifdef AIRSPY_MINI
-#define FILTERLEN 7
-static const int pshape[FILTERLEN]={4,-4,-5,5,5,-4,-4};
-#else
-#define FILTERLEN 11
-//static const int pshape[FILTERLEN]={ -9,9,16,-16,-16,16,16,-16,-16,9,9 };
-static const short pshape[FILTERLEN]={ 296,-157,1294,-4359,-7719,9199,7719,-4359,-1294,-157,-296 };
-#endif
+#define FILTERLEN 8 
 
 static void decodeiq(const short *r, const int len)
 {
@@ -60,27 +47,33 @@ static void decodeiq(const short *r, const int len)
 
 	int i,j;
 
-	for (i = 0; i < len; i++) {
+	for (i = 0; i < len; ) {
 		int sumi,sumq;
-		uint32_t off;
 
-		off=timestamp%FILTERLEN;
-		rbuff[off] = (int)r[i];
+		/* downsample by 2 */
+		rbuff[timestamp%FILTERLEN] = (int)r[i];i++;
+		timestamp++;
+		rbuff[timestamp%FILTERLEN] = (int)r[i];i++;
 		timestamp++;
 
+		/* box filter + fs/4 mixing */
 		sumi=sumq=0;
-		off++;
-		for(j=0;j<FILTERLEN-1;) {
-			sumq+=rbuff[(off+j)%FILTERLEN]*pshape[j];j++;
-			sumi+=rbuff[(off+j)%FILTERLEN]*pshape[j];j++;
+		for(j=0;j<FILTERLEN;) {
+		   if(j&2) {
+			sumq-=rbuff[j];j++;
+			sumi-=rbuff[j];j++;
+		   } else {
+			sumq+=rbuff[j];j++;
+			sumi+=rbuff[j];j++;
+		  }
 		}
-		sumq+=rbuff[(off+j)%FILTERLEN]*pshape[j];
-		sumi/=16384;sumq/=16384;
 
-		amp2buff[inidx++] = (sumi*sumi+sumq*sumq)/8;
+		/* iq to amp2 */
+		ampbuff[inidx]=(sumi*sumi+sumq*sumq)/4;
 
+		inidx++;
 		if(inidx==APBUFFSZ) {
-			memcpy(amp2buff,&(amp2buff[APBUFFSZ-PULSEW-DECOFFSET]),(DECOFFSET+PULSEW)*sizeof(int));
+			memcpy(ampbuff,&(ampbuff[APBUFFSZ-PULSEW-DECOFFSET]),(DECOFFSET+PULSEW)*sizeof(int));
 			inidx=DECOFFSET+PULSEW;
 		}	
 
@@ -158,17 +151,9 @@ int initAirspy(void)
 		return -1;
 	}
 
-       /* reduce FI bandwidth */
-        airspy_r820t_write(device, 10, 0xB0 | 15);
-        airspy_r820t_write(device, 11, 0x0 | 6 );
-
 	/* just to init timestamp to something */
        	clock_gettime(CLOCK_REALTIME, &tp);
-#ifdef AIRSPY_MINI
-	timestamp=tp.tv_sec*12000000LL+tp.tv_nsec/83; /* 12Mb/s clock */
-#else
 	timestamp=tp.tv_sec*20000000LL+tp.tv_nsec/50; /* 20Mb/s clock */
-#endif
 
 	return 0;
 }
