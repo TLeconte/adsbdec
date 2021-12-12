@@ -61,9 +61,10 @@ int deqframe(const int idx, const uint64_t sc)
 		ns = ampbuff[lidx + PULSEW] + ampbuff[lidx + 3 * PULSEW] + ampbuff[lidx + 8 * PULSEW] + ampbuff[lidx + 10 * PULSEW]; 
 
 		/* s/n test */
-		if (pv1 < ns)  {
+		if (pv1 < 2*ns)  {
 			return 1;
 		}
+
 
 		/* decode each bit */
 		for (k = 0; k < 112; k++) {
