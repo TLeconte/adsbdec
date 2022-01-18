@@ -1,0 +1,17 @@
+#
+#processor affinity, for XU4 you can try 4-7, for the N2 try 2-5
+AFFINITY="0-7"
+#gain is 0 to 21, each step of gain is equivalent to about 3dB, so reduce in increments of 1 if 21 is too high
+GAIN= 18
+
+#other options, append or remove from the line starting with OPTIONS=
+
+OPTIONS= 
+
+
+#network settings
+NET= -b -l 127.0.0.1:30005 
+
+#don't change:
+G=-g
+

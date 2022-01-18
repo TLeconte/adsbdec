@@ -1,0 +1,28 @@
+# adsbdec systemd service
+
+[Unit]
+Description=TLeconte ADS-B receiver
+Documentation=https://
+
+[Service]
+
+EnvironmentFile=/etc/default/adsbdec
+ExecStart=/usr/bin/taskset -c $AFFINITY /usr/local/bin/adsbdec $OPTIONS $NET $G $GAIN 
+
+SyslogIdentifier=adsbdec
+User=root
+
+Nice=-19
+
+Restart=always
+RestartSec=15
+StartLimitInterval=1
+StartLimitBurst=100
+
+RuntimeDirectory=adsbdec
+RuntimeDirectoryMode=0755
+
+
+[Install]
+WantedBy=multi-user.target
+
