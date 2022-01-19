@@ -26,8 +26,8 @@
 
 int df = 0;
 
-extern int validShort(uint8_t *frame,const uint64_t ts,uint32_t crc,u_char lvl);
-extern int validLong(uint8_t *frame, const uint64_t ts,uint32_t crc,u_char lvl);
+extern int validShort(uint8_t *frame,const uint64_t ts,uint32_t crc,uint32_t pw);
+extern int validLong(uint8_t *frame, const uint64_t ts,uint32_t crc,uint32_t pw);
 
 int deqframe(const int idx, const uint64_t sc)
 {
@@ -51,9 +51,6 @@ int deqframe(const int idx, const uint64_t sc)
 		uint8_t bits = 0;
 		int k;
 		int ns;
-		u_char lvl;
-
-		if(pv1 > 255<<17) lvl=255; else lvl=pv1>>17;
 
 		lidx = idx - 1 ;
 
@@ -75,7 +72,7 @@ int deqframe(const int idx, const uint64_t sc)
 
 				if (flen == 7) {
 					crc=CrcShort(frame);
-					if (df && validShort(frame, sc, CrcEnd(frame,crc,7),lvl)) {
+					if (df && validShort(frame, sc, CrcEnd(frame,crc,7),pv1)) {
 						pv1=pv2=0;
 						return 128 * PULSEW;
 					}
@@ -90,7 +87,7 @@ int deqframe(const int idx, const uint64_t sc)
 		frame[flen] = bits;
 		flen++;
 		crc=CrcLong(frame,crc);
-		if (validLong(frame,sc, CrcEnd(frame,crc,14),lvl)) {
+		if (validLong(frame,sc, CrcEnd(frame,crc,14),pv1)) {
 			pv1=pv2=0;
 			return 240 * PULSEW;
 		}

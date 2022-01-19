@@ -25,6 +25,7 @@
 #include <netdb.h>
 #include <inttypes.h>
 #include <pthread.h>
+#include <math.h>
 
 extern int initAirspy(void);
 extern int startAirspy(void);
@@ -46,7 +47,7 @@ struct blk_s {
         uint8_t frame[112];
         int len;
         uint64_t ts;
-	u_char lvl;
+	uint8_t lvl;
         blk_t *next;
 };
 static blk_t *blkhead;
@@ -133,6 +134,7 @@ static int initNet(void)
 				continue;
 			}
 	
+			fprintf(stderr, "listening\n");
 			sockfd=accept(lsock,NULL,NULL);
 			if(sockfd == -1) {
 				close(lsock);
@@ -154,16 +156,19 @@ static int initNet(void)
 	return 0;
 }
 
-void netout(const uint8_t *frame, const int len, const uint64_t ts,const u_char lvl)
+void netout(const uint8_t *frame, const int len, const uint64_t ts,const uint32_t pw)
 {
    blk_t *blk;
+   uint32_t lvl;
 
    blk=malloc(sizeof(blk_t));
 
    memcpy(blk->frame,frame,len);
    blk->len=len;
    blk->ts=ts;
-   blk->lvl=lvl;
+   lvl=(uint32_t)sqrt((float)pw)>>6;
+   if(lvl>255) lvl=255;
+   blk->lvl=(uint8_t)lvl;
    blk->next=NULL;
 	
    pthread_mutex_lock(&blkmtx);

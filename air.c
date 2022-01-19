@@ -29,7 +29,7 @@
 #define AIR_SAMPLE_RATE 20000000
 
 int gain = 18;
-int32_t ampbuff[APBUFFSZ];
+uint32_t ampbuff[APBUFFSZ];
 
 #define DECOFFSET (255*PULSEW)
 static uint64_t timestamp;
@@ -39,37 +39,37 @@ extern int deqframe(const int idx, const uint64_t sc);
 
 #define FILTERLEN 8 
 
-static void decodeiq(const short *r, const int len)
+static void decodeiq(const unsigned short *r, const int len)
 {
 	static int inidx = 0;
 	static int needsample = DECOFFSET;
 	static int rbuff[FILTERLEN];
 
-	int i,j;
+	int i;
+	if(len&1) fprintf(stderr,"odd input buffer len\n");
 
 	for (i = 0; i < len; ) {
 		int sumi,sumq;
 
 		/* downsample by 2 */
-		rbuff[timestamp%FILTERLEN] = (int)r[i];i++;
+		rbuff[timestamp%FILTERLEN] = (int)r[i]-0x800;i++;
 		timestamp++;
-		rbuff[timestamp%FILTERLEN] = (int)r[i];i++;
+		rbuff[timestamp%FILTERLEN] = (int)r[i]-0x800;i++;
 		timestamp++;
 
-		/* box filter + fs/4 mixing */
+		/* box filter + fs/4 mixing  unrolled */
 		sumi=sumq=0;
-		for(j=0;j<FILTERLEN;) {
-		   if(j&2) {
-			sumq-=rbuff[j];j++;
-			sumi-=rbuff[j];j++;
-		   } else {
-			sumq+=rbuff[j];j++;
-			sumi+=rbuff[j];j++;
-		  }
-		}
+		sumq+=rbuff[0];
+		sumi+=rbuff[1];
+		sumq-=rbuff[2];
+		sumi-=rbuff[3];
+		sumq+=rbuff[4];
+		sumi+=rbuff[5];
+		sumq-=rbuff[6];
+		sumi-=rbuff[7];
 
-		/* iq to amp2 */
-		ampbuff[inidx]=(sumi*sumi+sumq*sumq)/4;
+		/* iq to power */
+		ampbuff[inidx]=(sumi*sumi+sumq*sumq);
 
 		inidx++;
 		if(inidx==APBUFFSZ) {
@@ -101,7 +101,7 @@ int initAirspy(void)
 		return -1;
 	}
 
-	result = airspy_set_sample_type(device, AIRSPY_SAMPLE_INT16_REAL);
+	result = airspy_set_sample_type(device, AIRSPY_SAMPLE_RAW);
 	if (result != AIRSPY_SUCCESS) {
 		fprintf(stderr, "airspy_set_sample_type() failed: %s (%d)\n",
 			airspy_error_name(result), result);
@@ -160,7 +160,7 @@ int initAirspy(void)
 
 static int rx_callback(airspy_transfer_t * transfer)
 {
-	decodeiq((short *)(transfer->samples), transfer->sample_count);
+	decodeiq((unsigned short *)(transfer->samples), transfer->sample_count);
 	return 0;
 }
 
@@ -207,7 +207,7 @@ char *filename = NULL;
 void *fileInput(void *arg)
 {
 	int fd;
-	short *iqbuff;
+	unsigned short *iqbuff;
 
 	fd = open(filename, O_RDONLY);
 	if (fd < 0) {
@@ -215,7 +215,7 @@ void *fileInput(void *arg)
 		return NULL;
 	}
 
-	iqbuff = (short *)malloc(IQBUFFSZ * sizeof(short));
+	iqbuff = (unsigned short *)malloc(IQBUFFSZ * sizeof(short));
 
 	do {
 		int n;
