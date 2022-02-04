@@ -47,8 +47,9 @@ int deqframe(const int idx, const uint64_t sc)
 	{
 		uint8_t frame[14];
 		uint32_t crc;
-		int flen = 0;
+		int flen;
 		uint8_t bits = 0;
+		int fmlen;
 		int k;
 		int ns;
 
@@ -63,33 +64,52 @@ int deqframe(const int idx, const uint64_t sc)
 		}
 
 		/* decode each bit */
-		for (k = 0; k < 112; k++) {
+		flen=0;fmlen=0;
+		crc=0;
+		for (k = 0; k <= 14*8; k++) {
 
 			if (k && k % 8 == 0) {
 				frame[flen] = bits;
-				bits = 0;
 				flen++;
 
-				if (flen == 7) {
-					crc=CrcShort(frame);
+				if (flen == 1) {
+					switch(frame[0] >> 3) {
+        					case 0: case 4: case 5: case 11:
+							fmlen=7;
+							break;
+        					case 16: case 17: case 18: case 20: case 21: case 24:
+							fmlen=14;
+							break;
+        					default:
+							pv1=pv2=0;
+							return 1;
+    					}
+				} 
+
+				if (flen <= fmlen-3)   {
+					crc=CrcStep(bits,crc);
+				}
+
+				if (fmlen == 7 && flen == 7) {
 					if (df && validShort(frame, sc, CrcEnd(frame,crc,7),pv1)) {
 						pv1=pv2=0;
 						return 128 * PULSEW;
 					}
 				}
+
+				if (fmlen == 14 && flen == 14) {
+					if (validLong(frame,sc, CrcEnd(frame,crc,14),pv1)) {
+						pv1=pv2=0;
+						return 240 * PULSEW;
+					}
+				}
+				bits = 0;
 			}
 
 			bits = bits << 1;
 			if (ampbuff[lidx + (16 + 2 * k) * PULSEW] >
 			    ampbuff[lidx + (17 + 2 * k) * PULSEW])
 				bits |= 1;
-		}
-		frame[flen] = bits;
-		flen++;
-		crc=CrcLong(frame,crc);
-		if (validLong(frame,sc, CrcEnd(frame,crc,14),pv1)) {
-			pv1=pv2=0;
-			return 240 * PULSEW;
 		}
 	}
 	return 1;
