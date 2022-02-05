@@ -76,6 +76,10 @@ int deqframe(const int idx, const uint64_t sc)
 					switch(frame[0] >> 3) {
         					case 0: case 4: case 5: case 11:
 							fmlen=7;
+							if(df==0) {
+								pv1=pv2=0;
+								return 1;
+							}
 							break;
         					case 16: case 17: case 18: case 20: case 21: case 24:
 							fmlen=14;
@@ -91,7 +95,7 @@ int deqframe(const int idx, const uint64_t sc)
 				}
 
 				if (fmlen == 7 && flen == 7) {
-					if (df && validShort(frame, sc, CrcEnd(frame,crc,7),pv1)) {
+					if (validShort(frame, sc, CrcEnd(frame,crc,7),pv1)) {
 						pv1=pv2=0;
 						return 128 * PULSEW;
 					}

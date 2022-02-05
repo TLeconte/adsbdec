@@ -27,7 +27,7 @@ extern int outmode;
 extern int outformat;
 extern char *filename;
 extern int gain;
-extern int df, errcorr,crcok;
+extern int df, errcorr;
 
 extern int runOutput(void);
 extern void handlerExit(int sig);
@@ -39,8 +39,7 @@ static void usage(void)
 	printf
 	    ("By default receive samples from airspy and output long adsb frames in raw avr format on stdout\n");
 	printf("Options :\n");
-	printf("\t-d : output short DF11 frames too\n");
-	printf("\t-c : only frame with true crc (DF11/17/18)\n");
+	printf("\t-d : output short frames too\n");
 	printf("\t-e : use 1 bit error correction\n");
 	printf("\t-m : output avrmlat format (ie : with 12Mhz timestamp)\n");
 	printf("\t-b : output binary beast format\n");
@@ -75,9 +74,6 @@ int main(int argc, char **argv)
 			break;
 		case 'd':
 			df = 1;
-			break;
-		case 'c':
-			crcok = 1;
 			break;
 		case 'e':
 			errcorr = 1;
