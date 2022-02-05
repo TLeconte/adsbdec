@@ -27,10 +27,12 @@ extern int outmode;
 extern int outformat;
 extern char *filename;
 extern int gain;
+
 extern int df, errcorr;
 
 extern int runOutput(void);
 extern void handlerExit(int sig);
+extern void print_stats(void);
 
 static void usage(void)
 {
@@ -101,6 +103,8 @@ int main(int argc, char **argv)
 	sigaction(SIGPIPE, &sigact, NULL);
 
 	res = runOutput();
+
+	if(filename) print_stats();
 
 	return res;
 }
