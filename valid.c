@@ -118,11 +118,17 @@ static inline uint32_t icao(uint8_t *frame)
 	return (frame[1]<<16)|(frame[2]<<8)|frame[3];
 }
 
-int validShort(uint8_t *frame,const uint64_t ts,uint32_t crc,uint32_t pw)
+int validShort(uint8_t *frame,const uint64_t ts,uint32_t pw)
 {
+	uint32_t crc=0;
 	uint32_t type = frame[0] >> 3;
+	int n;
 
 	stat_try[type]++;
+
+	for(n=0;n<4;n++)
+		crc=CrcStep(frame[n],crc);
+	crc=CrcEnd(frame,crc,7);
 
 	if(type == 11) {
 	       	if ((crc & 0xffff80) == 0 ) {
@@ -143,12 +149,17 @@ int validShort(uint8_t *frame,const uint64_t ts,uint32_t crc,uint32_t pw)
 	return 0;
 }
 
-int validLong(uint8_t *frame, const uint64_t ts,uint32_t crc,uint32_t pw)
+int validLong(uint8_t *frame, const uint64_t ts,uint32_t pw)
 {
+	uint32_t crc=0;
 	uint32_t type = frame[0] >> 3;
-	int nb;
+	int n;
 
 	stat_try[type]++;
+
+	for(n=0;n<11;n++)
+		crc=CrcStep(frame[n],crc);
+	crc=CrcEnd(frame,crc,14);
 
 	if( type == 17 || type == 18 ) {
 	    if(crc==0) {
@@ -159,6 +170,7 @@ int validLong(uint8_t *frame, const uint64_t ts,uint32_t crc,uint32_t pw)
 	    }
 
 	    if(errcorr) {
+		int nb;
 		nb = testFix(frame, crc);
 		if( nb >= 0 ) {
 			fixChecksum(frame,nb);

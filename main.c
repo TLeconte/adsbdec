@@ -104,7 +104,7 @@ int main(int argc, char **argv)
 
 	res = runOutput();
 
-	if(filename) print_stats();
+	print_stats();
 
 	return res;
 }

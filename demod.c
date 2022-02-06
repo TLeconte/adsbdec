@@ -21,13 +21,12 @@
 #include <string.h>
 #include <inttypes.h>
 #include <math.h>
-#include "crc.h"
 #include "adsbdec.h"
 
 int df = 0;
 
-extern int validShort(uint8_t *frame,const uint64_t ts,uint32_t crc,uint32_t pw);
-extern int validLong(uint8_t *frame, const uint64_t ts,uint32_t crc,uint32_t pw);
+extern int validShort(uint8_t *frame,const uint64_t ts,uint32_t pw);
+extern int validLong(uint8_t *frame, const uint64_t ts,uint32_t pw);
 
 int deqframe(const int idx, const uint64_t sc)
 {
@@ -46,7 +45,6 @@ int deqframe(const int idx, const uint64_t sc)
 	if (pv1 > pv0 && pv1 > pv2) 
 	{
 		uint8_t frame[14];
-		uint32_t crc;
 		int flen;
 		uint8_t bits = 0;
 		int fmlen;
@@ -65,7 +63,6 @@ int deqframe(const int idx, const uint64_t sc)
 
 		/* decode each bit */
 		flen=0;fmlen=0;
-		crc=0;
 		for (k = 0; k <= 14*8; k++) {
 
 			if (k && k % 8 == 0) {
@@ -90,19 +87,15 @@ int deqframe(const int idx, const uint64_t sc)
     					}
 				} 
 
-				if (flen <= fmlen-3)   {
-					crc=CrcStep(bits,crc);
-				}
-
 				if (fmlen == 7 && flen == 7) {
-					if (validShort(frame, sc, CrcEnd(frame,crc,7),pv1)) {
+					if (validShort(frame, sc, pv1)) {
 						pv1=pv2=0;
 						return 128 * PULSEW;
 					}
 				}
 
 				if (fmlen == 14 && flen == 14) {
-					if (validLong(frame,sc, CrcEnd(frame,crc,14),pv1)) {
+					if (validLong(frame,sc, pv1)) {
 						pv1=pv2=0;
 						return 240 * PULSEW;
 					}
