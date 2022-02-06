@@ -8,7 +8,6 @@ By default receive samples from airspy and output long adsb frames (DF14/17/18/2
 
 ## Options
 	-d : output short frames too
-	-c : only frame with true crc (DF11/17/18)
 	-e : use 1 bit error correction
 	-m : output avrmlat format (ie : with 12Mhz timestamp)
 	-b : output binary beast format
