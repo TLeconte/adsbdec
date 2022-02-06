@@ -31,7 +31,7 @@
 int gain = 18;
 uint32_t ampbuff[APBUFFSZ];
 
-#define DECOFFSET (255*PULSEW)
+#define DECOFFSET (240*PULSEW)
 static uint64_t timestamp;
 
 extern void handlerExit(int sig);
@@ -73,8 +73,8 @@ static void decodeiq(const unsigned short *r, const int len)
 
 		inidx++;
 		if(inidx==APBUFFSZ) {
-			memcpy(ampbuff,&(ampbuff[APBUFFSZ-PULSEW-DECOFFSET]),(DECOFFSET+PULSEW)*sizeof(int));
-			inidx=DECOFFSET+PULSEW;
+			memcpy(ampbuff,&(ampbuff[APBUFFSZ-1-DECOFFSET]),(DECOFFSET+1)*sizeof(int));
+			inidx=DECOFFSET+1;
 		}	
 
 		needsample--;

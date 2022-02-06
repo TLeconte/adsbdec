@@ -70,7 +70,7 @@ int deqframe(const int idx, const uint64_t sc)
 		ns = ampbuff[lidx + PULSEW] + ampbuff[lidx + 3 * PULSEW] + ampbuff[lidx + 4 * PULSEW] + ampbuff[lidx + 5 * PULSEW] + ampbuff[lidx + 6 * PULSEW] + ampbuff[lidx + 8 * PULSEW] ; 
 
 		/* s/n test */
-		if (pv1 < 2*ns)  {
+		if (pv1 < 2 * ns)  {
 			return 1;
 		}
 
@@ -100,18 +100,17 @@ int deqframe(const int idx, const uint64_t sc)
 			frame[flen]=getabyte(lidx);
 		}
 
-		if (fmlen == 7 ) {
-			if (validShort(frame,sc,pv1)) {
-				pv1=pv2=0;
-				return 128 * PULSEW;
-			}
-		}
-
-		if (fmlen == 14 ) {
-			if (validLong(frame,sc,pv1)) {
-				pv1=pv2=0;
-				return 240 * PULSEW;
-			}
+		switch(fmlen) {
+			case  7 :
+				if (validShort(frame,sc,pv1)) {
+					pv1=pv2=0;
+					return 128 * PULSEW;
+				}
+			case 14 :
+				if (validLong(frame,sc,pv1)) {
+					pv1=pv2=0;
+					return 240 * PULSEW;
+				}
 		}
 
 	}

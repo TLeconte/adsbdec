@@ -134,7 +134,7 @@ int validShort(uint8_t *frame,const uint64_t ts,uint32_t pw)
 	       	if ((crc & 0xffff80) == 0 ) {
 			stat_ok[type]++;
 			addaircraft(icao(frame));
-			netout(frame, 7,ts,pw);
+			netout(frame,7,ts,pw);
 			return 1;
 		} 
 		return 0;
@@ -142,7 +142,7 @@ int validShort(uint8_t *frame,const uint64_t ts,uint32_t pw)
 
 	if (findaircraft(crc)) {
 		stat_fi[type]++;
-		netout(frame, 14,ts,pw);
+		netout(frame,7,ts,pw);
 		return 1;
 	}
 
