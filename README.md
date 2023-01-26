@@ -23,9 +23,6 @@ Man could use adsbdec to send data to any other avr format compatible server (VR
 For VRS select "Push receiver" , "AVR format", and :
 > adsbdec -e -s 192.168.0.10:30001
 
-To directly feed to adsbexchange (without mlat) :
-> adsbdec -b -s feed.adsbexchange.com:30005
-
 If you need that adsbdec act as server (like dump1090) :
 > adsbdec -e -l 192.168.0.10:30002
 
