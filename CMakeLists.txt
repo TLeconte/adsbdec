@@ -1,6 +1,8 @@
 project(adsbdec)
 
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+include(FindPackageHandleStandardArgs)
 
 add_library(
         adsbdec-lib
@@ -13,6 +15,10 @@ add_library(
 
 add_subdirectory(airspy)
 
+find_package(LIBUSB REQUIRED)
+
+include_directories(${LIBUSB_INCLUDE_DIR})
+
 add_executable(adsbdec main.c)
-target_link_libraries(adsbdec-lib usb-1.0 m airspy-static)
+target_link_libraries(adsbdec-lib m airspy-static ${LIBUSB_LIBRARIES})
 target_link_libraries(adsbdec adsbdec-lib)
