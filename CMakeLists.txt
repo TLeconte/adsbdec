@@ -11,6 +11,8 @@ add_library(
         valid.c
 )
 
+add_subdirectory(airspy)
+
 add_executable(adsbdec main.c)
-target_link_libraries(adsbdec-lib airspy usb-1.0 m)
+target_link_libraries(adsbdec-lib usb-1.0 m airspy-static)
 target_link_libraries(adsbdec adsbdec-lib)
