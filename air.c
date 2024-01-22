@@ -23,7 +23,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <time.h>
-#include <libairspy/airspy.h>
+#include <airspy.h>
 #include "adsbdec.h"
 
 #define AIR_SAMPLE_RATE 20000000
