@@ -18,7 +18,7 @@
  */
 #include <stddef.h>
 #include <inttypes.h>
-#include <crc.h>
+#include "crc.h"
 
 static const uint32_t error_table[112] = {
 	0x3935ea, 0x1c9af5, 0xf1b77e, 0x78dbbf, 0xc397db, 0x9e31e9, 0xb0e2f0, 0x587178,

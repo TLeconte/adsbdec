@@ -23,12 +23,13 @@
 #include <string.h>
 #include <fcntl.h>
 #include <time.h>
-#include <libairspy/airspy.h>
+#include <airspy.h>
 #include "adsbdec.h"
 
 #define AIR_SAMPLE_RATE 20000000
 
 int gain = 18;
+int device_fd = -1;
 uint32_t ampbuff[APBUFFSZ];
 
 #define DECOFFSET (240*PULSEW)
@@ -94,7 +95,12 @@ int initAirspy(void)
 	struct timespec tp;
 
 	/* init airspy */
-	result = airspy_open(&device);
+    if (device_fd == -1) {
+        result = airspy_open(&device);
+    } else {
+        result = airspy_open_fd(&device, device_fd);
+    }
+
 	if (result != AIRSPY_SUCCESS) {
 		fprintf(stderr, "airspy_open() failed: %s (%d)\n", airspy_error_name(result),
 			result);
