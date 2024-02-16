@@ -27,10 +27,10 @@
 #include <pthread.h>
 #include <math.h>
 
-extern int initAirspy(void);
-extern int startAirspy(void);
-extern void stopAirspy(void);
-extern void closeAirspy(void);
+extern int initSDR(void);
+extern int startSDR(void);
+extern void stopSDR(void);
+extern void closeSDR(void);
 extern char* filename;
 extern void *fileInput(void *arg);
 
@@ -267,9 +267,9 @@ int runOutput(void)
         pthread_t th;
         pthread_create(&th, NULL, fileInput, NULL);
     } else {
-     if(initAirspy()<0)
+     if(initSDR()<0)
 	return -1;
-     if(startAirspy()<0)
+     if(startSDR()<0)
 	return -1;
     }
 
@@ -286,7 +286,7 @@ int runOutput(void)
 			sleep(3);
 			continue;
 		}
-		if(startAirspy()<0)
+		if(startSDR()<0)
 			return -1;
 	}
 
@@ -314,7 +314,7 @@ int runOutput(void)
 				fprintf(stderr,"disconnected\n");
 				close(sockfd);
 				sockfd = -1;
-				stopAirspy();
+				stopSDR();
 				freelist();
 				break;
 			}
@@ -328,7 +328,7 @@ int runOutput(void)
      free(blk);
    } while (1);
 
-   closeAirspy();
+   closeSDR();
    return 0;
 }
 
@@ -338,7 +338,7 @@ void handlerExit(int sig)
    do_exit=1;
    pthread_cond_signal(&blkwcd);
 
-   stopAirspy();
+   stopSDR();
    if(sockfd>0)  {
         close(sockfd);
 	sockfd=-1;

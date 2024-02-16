@@ -1,5 +1,5 @@
 #define PULSEW 5
-#define APBUFFSZ (8196*PULSEW)
-extern uint32_t ampbuff[APBUFFSZ];
+#define DECOFFSET (240*PULSEW)
 
+extern int deqframe(const float *ampbuff, const int len);
 

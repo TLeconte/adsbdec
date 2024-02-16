@@ -28,7 +28,7 @@ int df = 0;
 extern int validShort(uint8_t *frame,const uint64_t ts,uint32_t pw);
 extern int validLong(uint8_t *frame, const uint64_t ts,uint32_t pw);
 
-static inline uint8_t getabyte(int idx) {
+static inline uint8_t getabyte(const float *ampbuff, const int idx) {
 	uint8_t bits=0;
 
 	if (ampbuff[idx] > ampbuff[idx + PULSEW]) bits |= 0x80;
@@ -44,9 +44,12 @@ static inline uint8_t getabyte(int idx) {
 }
 
 
-int deqframe(const int idx, const uint64_t sc)
+int deqframe(const float *ampbuff, const int len)
 {
 	static uint32_t pv0, pv1, pv2;
+	int idx;
+
+	for(idx = 0; idx< len-DECOFFSET; ) {
 
 	pv0 = pv1;
 	pv1 = pv2;
@@ -70,21 +73,23 @@ int deqframe(const int idx, const uint64_t sc)
 		ns = ampbuff[lidx + PULSEW] + ampbuff[lidx + 3 * PULSEW] + ampbuff[lidx + 4 * PULSEW] + ampbuff[lidx + 5 * PULSEW] + ampbuff[lidx + 6 * PULSEW] + ampbuff[lidx + 8 * PULSEW] ; 
 
 		/* s/n test */
-		if (pv1 < 2 * ns)  {
-			return 1;
+		if (pv1 < 4 * ns)  {
+			idx ++;
+			continue;
 		}
 
 		lidx+=16*PULSEW;
 
 		/* decode 1st byte to get len */
-		frame[0]=getabyte(lidx);
+		frame[0]=getabyte(ampbuff,lidx);
 
 		switch(frame[0] >> 3) {
         		case 0: case 4: case 5: case 11:
 				fmlen=7;
 				if(df==0) {
 					pv1=pv2=0;
-					return 1;
+					idx++;
+					continue;
 				}
 				break;
         		case 16: case 17: case 18: case 20: case 21: case 24:
@@ -92,29 +97,34 @@ int deqframe(const int idx, const uint64_t sc)
 				break;
         		default:
 				pv1=pv2=0;
-				return 1;
+				idx++;
+				continue;
     		}
 
 		for(flen=1;flen<fmlen;flen++) {
 			lidx+=16*PULSEW;
-			frame[flen]=getabyte(lidx);
+			frame[flen]=getabyte(ampbuff,lidx);
 		}
 
 		switch(fmlen) {
 			case  7 :
-				if (validShort(frame,sc,pv1)) {
+				if (validShort(frame,idx,pv1)) {
 					pv1=pv2=0;
-					return 128 * PULSEW;
+					idx+= 128 * PULSEW;
+					continue;
 				}
 			case 14 :
-				if (validLong(frame,sc,pv1)) {
+				if (validLong(frame,idx,pv1)) {
 					pv1=pv2=0;
-					return 240 * PULSEW;
+					idx+= 240 * PULSEW;
+					continue;
 				}
 		}
 
 	}
-	return 1;
+	idx++;
+	}
+	return idx;	
 }
 
 

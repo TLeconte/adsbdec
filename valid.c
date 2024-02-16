@@ -33,7 +33,7 @@ static aircraft_t *ahead=NULL;
 
 static int stat_try[26] = { 0 };
 static int stat_ok[26] = { 0 };
-static int stat_fi[26] = { 0 };
+static int stat_gs[26] = { 0 };
 
 static void delaircraft(aircraft_t *prev,aircraft_t *curr)
 {
@@ -141,7 +141,7 @@ int validShort(uint8_t *frame,const uint64_t ts,uint32_t pw)
 	}
 
 	if (findaircraft(crc)) {
-		stat_fi[type]++;
+		stat_gs[type]++;
 		netout(frame,7,ts,pw);
 		return 1;
 	}
@@ -176,7 +176,7 @@ int validLong(uint8_t *frame, const uint64_t ts,uint32_t pw)
 			fixChecksum(frame,nb);
 			if(findaircraft(icao(frame))){
 				type = frame[0] >> 3;
-				stat_fi[type]++;
+				stat_gs[type]++;
 				netout(frame, 14,ts,pw);
 				return 1;
 			}
@@ -186,7 +186,7 @@ int validLong(uint8_t *frame, const uint64_t ts,uint32_t pw)
 	}
 
 	if (findaircraft(crc)) {
-		stat_fi[type]++;
+		stat_gs[type]++;
 		netout(frame, 14,ts,pw);
 		return 1;
 	}
@@ -226,18 +226,18 @@ void print_stats(void)
 	tot_ok=stat_ok[0]+stat_ok[4]+stat_ok[5]+stat_ok[11]+stat_ok[16]+stat_ok[17]+stat_ok[18]+stat_ok[20]+stat_ok[21]+stat_ok[24];
 	fprintf(stderr,"%d\n",tot_ok);
 
-	fprintf(stderr,"Find :\t");
-	fprintf(stderr,"%7d\t",stat_fi[0]);
-	fprintf(stderr,"%7d\t",stat_fi[4]);
-	fprintf(stderr,"%7d\t",stat_fi[5]);
-	fprintf(stderr,"%7d\t",stat_fi[11]);
-	fprintf(stderr,"%7d\t",stat_fi[16]);
-	fprintf(stderr,"%7d\t",stat_fi[17]);
-	fprintf(stderr,"%7d\t",stat_fi[18]);
-	fprintf(stderr,"%7d\t",stat_fi[20]);
-	fprintf(stderr,"%7d\t",stat_fi[21]);
-	fprintf(stderr,"%7d\t",stat_fi[24]);
-	tot_fi=stat_fi[0]+stat_fi[4]+stat_fi[5]+stat_fi[11]+stat_fi[16]+stat_fi[17]+stat_fi[18]+stat_fi[20]+stat_fi[21]+stat_fi[24];
+	fprintf(stderr,"Guess :\t");
+	fprintf(stderr,"%7d\t",stat_gs[0]);
+	fprintf(stderr,"%7d\t",stat_gs[4]);
+	fprintf(stderr,"%7d\t",stat_gs[5]);
+	fprintf(stderr,"%7d\t",stat_gs[11]);
+	fprintf(stderr,"%7d\t",stat_gs[16]);
+	fprintf(stderr,"%7d\t",stat_gs[17]);
+	fprintf(stderr,"%7d\t",stat_gs[18]);
+	fprintf(stderr,"%7d\t",stat_gs[20]);
+	fprintf(stderr,"%7d\t",stat_gs[21]);
+	fprintf(stderr,"%7d\t",stat_gs[24]);
+	tot_fi=stat_gs[0]+stat_gs[4]+stat_gs[5]+stat_gs[11]+stat_gs[16]+stat_gs[17]+stat_gs[18]+stat_gs[20]+stat_gs[21]+stat_gs[24];
 	fprintf(stderr,"%d\n",tot_fi);
 
 	fprintf(stderr,"\t\t\t\t\t\t\t\t\t\t\t%d\n",tot_ok+tot_fi);

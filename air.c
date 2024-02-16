@@ -27,35 +27,33 @@
 #include "adsbdec.h"
 
 #define AIR_SAMPLE_RATE 20000000
-
 int gain = 18;
-uint32_t ampbuff[APBUFFSZ];
 
-#define DECOFFSET (240*PULSEW)
-static uint64_t timestamp;
+#define APBUFFSZ (8196*PULSEW)
+#define FILTERLEN 8 
+
+static float ampbuff[APBUFFSZ];
+static uint32_t inidx = 0;
+static uint32_t fidx = 0 ;
+static int rbuff[FILTERLEN];
 
 extern void handlerExit(int sig);
-extern int deqframe(const int idx, const uint64_t sc);
-
-#define FILTERLEN 8 
 
 static void decodeiq(const unsigned short *r, const int len)
 {
-	static int inidx = 0;
-	static int needsample = DECOFFSET;
-	static int rbuff[FILTERLEN];
 
-	int i;
+	int rlen;
+
 	if(len&1) fprintf(stderr,"odd input buffer len\n");
 
-	for (i = 0; i < len; ) {
+	for (int i = 0; i < len; ) {
 		int sumi,sumq;
 
 		/* downsample by 2 */
-		rbuff[timestamp%FILTERLEN] = (int)r[i]-0x800;i++;
-		timestamp++;
-		rbuff[timestamp%FILTERLEN] = (int)r[i]-0x800;i++;
-		timestamp++;
+		rbuff[fidx%FILTERLEN] = (int)r[i]-0x800;i++;
+		fidx++;
+		rbuff[fidx%FILTERLEN] = (int)r[i]-0x800;i++;
+		fidx++;
 
 		/* box filter + fs/4 mixing  unrolled */
 		sumi=sumq=0;
@@ -70,28 +68,29 @@ static void decodeiq(const unsigned short *r, const int len)
 
 		/* iq to power */
 		ampbuff[inidx]=(sumi*sumi+sumq*sumq);
-
 		inidx++;
-		if(inidx==APBUFFSZ) {
-			memcpy(ampbuff,&(ampbuff[APBUFFSZ-1-DECOFFSET]),(DECOFFSET+1)*sizeof(int));
-			inidx=DECOFFSET+1;
-		}	
 
-		needsample--;
-		if (needsample == 0)
-			needsample = deqframe(inidx-DECOFFSET, timestamp );
+		if(inidx==APBUFFSZ) {
+			rlen = deqframe(ampbuff, inidx);
+			if(rlen<inidx) 
+				memcpy(ampbuff,&(ampbuff[rlen]),(inidx-rlen)*sizeof(float));
+			inidx=inidx-rlen;
+		}	
 	}
+	rlen = deqframe(ampbuff, inidx);
+	if(rlen<inidx) 
+		memcpy(ampbuff,&(ampbuff[rlen]),(inidx-rlen)*sizeof(float));
+	inidx=inidx-rlen;
 }
 
 
 static struct airspy_device *device = NULL;
 
-int initAirspy(void)
+int initSDR(void)
 {
 	int result;
 	uint32_t i, count;
 	uint32_t *supported_samplerates;
-	struct timespec tp;
 
 	/* init airspy */
 	result = airspy_open(&device);
@@ -151,10 +150,6 @@ int initAirspy(void)
 		return -1;
 	}
 
-	/* just to init timestamp to something */
-       	clock_gettime(CLOCK_REALTIME, &tp);
-	timestamp=tp.tv_sec*20000000LL+tp.tv_nsec/50; /* 20Mb/s clock */
-
 	return 0;
 }
 
@@ -164,7 +159,7 @@ static int rx_callback(airspy_transfer_t * transfer)
 	return 0;
 }
 
-int startAirspy(void)
+int startSDR(void)
 {
 	int result;
 
@@ -184,7 +179,7 @@ int startAirspy(void)
 	return 0;
 }
 
-void stopAirspy(void)
+void stopSDR(void)
 {
   if(device == NULL) return ;
 
@@ -192,7 +187,7 @@ void stopAirspy(void)
 }
 
 
-void closeAirspy(void)
+void closeSDR(void)
 {
 
    if(device == NULL) return ;
