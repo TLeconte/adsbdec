@@ -47,7 +47,7 @@ struct blk_s {
         uint8_t frame[112];
         int len;
         uint64_t ts;
-	uint8_t lvl;
+	uint32_t pw;
         blk_t *next;
 };
 static blk_t *blkhead;
@@ -159,16 +159,13 @@ static int initNet(void)
 void netout(const uint8_t *frame, const int len, const uint64_t ts,const uint32_t pw)
 {
    blk_t *blk;
-   uint32_t lvl;
 
    blk=malloc(sizeof(blk_t));
 
    memcpy(blk->frame,frame,len);
    blk->len=len;
    blk->ts=ts;
-   lvl=(uint32_t)sqrt((float)pw)>>6;
-   if(lvl>255) lvl=255;
-   blk->lvl=(uint8_t)lvl;
+   blk->pw=pw;
    blk->next=NULL;
 	
    pthread_mutex_lock(&blkmtx);
@@ -209,6 +206,7 @@ int formatpkt(blk_t *blk,char *pkt)
     int i,o,len;
     char *p;
     char ch;
+    uint8_t lvl;
 
     p=pkt;
     switch (outformat) {
@@ -217,7 +215,7 @@ int formatpkt(blk_t *blk,char *pkt)
 		o = 1;
 		break;
 	case 1:
-		sprintf(pkt, "@%012" PRIX64, (12*(blk->ts & 0xffffffffffffff)/20) & 0xffffffffffff);
+		sprintf(pkt, "@%012" PRIX64, blk->ts & 0xffffffffffff);
 		o = 13;
 		break;
 	default:
@@ -230,7 +228,9 @@ int formatpkt(blk_t *blk,char *pkt)
         			*p++ = ch;
     			}
 		}
-		*p++ = blk->lvl; 
+		lvl=nearbyint(sqrt(blk->pw))*2;
+		if(lvl>255) lvl=255;
+		*p++ = lvl; 
 		break;
       }
 
@@ -267,15 +267,16 @@ int runOutput(void)
         pthread_t th;
         pthread_create(&th, NULL, fileInput, NULL);
     } else {
-     if(initSDR()<0)
-	return -1;
-     if(startSDR()<0)
-	return -1;
+        if(initSDR()<0)
+	     return -1;
     }
 
+    if (outmode ==0) {
+	if(startSDR()<0)
+		return -1;
+   }
 
    do {
-
 	if(do_exit) 
 		break;
 
@@ -294,16 +295,15 @@ int runOutput(void)
       while (blkhead == NULL && do_exit==0)
           pthread_cond_wait(&blkwcd, &blkmtx);
 
-	if(do_exit)
-                break;
-
       blk = blkhead;
       if(blkend==blk)
         blkend=NULL;
-
-      blkhead=blk->next;
+      if(blk)
+        blkhead=blk->next;
 
       pthread_mutex_unlock(&blkmtx);
+
+      if(blk==NULL) continue;
 
       len=formatpkt(blk,pkt);
 
@@ -328,6 +328,10 @@ int runOutput(void)
      free(blk);
    } while (1);
 
+   if(sockfd>0)  {
+        close(sockfd);
+	sockfd=-1;
+   }
    closeSDR();
    return 0;
 }
@@ -335,13 +339,8 @@ int runOutput(void)
 void handlerExit(int sig)
 {
 
+   stopSDR();
    do_exit=1;
    pthread_cond_signal(&blkwcd);
-
-   stopSDR();
-   if(sockfd>0)  {
-        close(sockfd);
-	sockfd=-1;
-   }
 
 }

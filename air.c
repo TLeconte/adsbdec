@@ -70,7 +70,7 @@ static void decodeiq(const unsigned short *r, const int len)
 		ampbuff[inidx]=(sumi*sumi+sumq*sumq);
 		inidx++;
 
-		if(inidx==APBUFFSZ) {
+		if(inidx>=APBUFFSZ) {
 			rlen = deqframe(ampbuff, inidx);
 			if(rlen<inidx) 
 				memcpy(ampbuff,&(ampbuff[rlen]),(inidx-rlen)*sizeof(float));

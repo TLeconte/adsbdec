@@ -47,9 +47,12 @@ static inline uint8_t getabyte(const float *ampbuff, const int idx) {
 int deqframe(const float *ampbuff, const int len)
 {
 	static uint32_t pv0, pv1, pv2;
+	static uint64_t ts=0;
 	int idx;
 
 	for(idx = 0; idx< len-DECOFFSET; ) {
+
+	ts++;
 
 	pv0 = pv1;
 	pv1 = pv2;
@@ -73,7 +76,7 @@ int deqframe(const float *ampbuff, const int len)
 		ns = ampbuff[lidx + PULSEW] + ampbuff[lidx + 3 * PULSEW] + ampbuff[lidx + 4 * PULSEW] + ampbuff[lidx + 5 * PULSEW] + ampbuff[lidx + 6 * PULSEW] + ampbuff[lidx + 8 * PULSEW] ; 
 
 		/* s/n test */
-		if (pv1 < 4 * ns)  {
+		if (pv1 < 2 * ns)  {
 			idx ++;
 			continue;
 		}
@@ -84,7 +87,7 @@ int deqframe(const float *ampbuff, const int len)
 		frame[0]=getabyte(ampbuff,lidx);
 
 		switch(frame[0] >> 3) {
-        		case 0: case 4: case 5: case 11:
+        		case 0: case 4: case 5:
 				fmlen=7;
 				if(df==0) {
 					pv1=pv2=0;
@@ -92,7 +95,10 @@ int deqframe(const float *ampbuff, const int len)
 					continue;
 				}
 				break;
-        		case 16: case 17: case 18: case 20: case 21: case 24:
+		       	case 11:
+				fmlen=7;
+				break;
+        		case 16: case 17: case 18: case 20: case 21:
 				fmlen=14;
 				break;
         		default:
@@ -108,13 +114,13 @@ int deqframe(const float *ampbuff, const int len)
 
 		switch(fmlen) {
 			case  7 :
-				if (validShort(frame,idx,pv1)) {
+				if (validShort(frame,ts,pv1/4)) {
 					pv1=pv2=0;
 					idx+= 128 * PULSEW;
 					continue;
 				}
 			case 14 :
-				if (validLong(frame,idx,pv1)) {
+				if (validLong(frame,ts,pv1/4)) {
 					pv1=pv2=0;
 					idx+= 240 * PULSEW;
 					continue;

@@ -31,9 +31,9 @@ int errcorr = 0;
 static aircraft_t *ahead=NULL;
 #define DT 60
 
-static int stat_try[26] = { 0 };
-static int stat_ok[26] = { 0 };
-static int stat_gs[26] = { 0 };
+static uint32_t stat_try[26] = { 0 };
+static uint32_t stat_ok[26] = { 0 };
+static uint32_t stat_gs[26] = { 0 };
 
 static void delaircraft(aircraft_t *prev,aircraft_t *curr)
 {
@@ -198,47 +198,41 @@ void print_stats(void)
 {
 	int tot_ok,tot_fi;
 
-	fprintf(stderr,"\t%7d\t%7d\t%7d\t%7d\t%7d\t%7d\t%7d\t%7d\t%7d\t%7d\tTotal\n",0,4,5,11,16,17,18,20,21,24);
+	fprintf(stderr,"\t%10d\t%10d\t%10d\t%10d\t%10d\t%10d\t%10d\t%10d\t%10d\n",0,4,5,11,16,17,18,20,21);
 	fprintf(stderr,"Try :\t");
-	fprintf(stderr,"%7d\t",stat_try[0]);
-	fprintf(stderr,"%7d\t",stat_try[4]);
-	fprintf(stderr,"%7d\t",stat_try[5]);
-	fprintf(stderr,"%7d\t",stat_try[11]);
-	fprintf(stderr,"%7d\t",stat_try[16]);
-	fprintf(stderr,"%7d\t",stat_try[17]);
-	fprintf(stderr,"%7d\t",stat_try[18]);
-	fprintf(stderr,"%7d\t",stat_try[20]);
-	fprintf(stderr,"%7d\t",stat_try[21]);
-	fprintf(stderr,"%7d\t",stat_try[24]);
-	fprintf(stderr,"%d\n",stat_try[0]+stat_try[4]+stat_try[5]+stat_try[11]+stat_try[16]+stat_try[17]+stat_try[18]+stat_try[20]+stat_try[21]+stat_try[24]);
+	fprintf(stderr,"%10d\t",stat_try[0]);
+	fprintf(stderr,"%10d\t",stat_try[4]);
+	fprintf(stderr,"%10d\t",stat_try[5]);
+	fprintf(stderr,"%10d\t",stat_try[11]);
+	fprintf(stderr,"%10d\t",stat_try[16]);
+	fprintf(stderr,"%10d\t",stat_try[17]);
+	fprintf(stderr,"%10d\t",stat_try[18]);
+	fprintf(stderr,"%10d\t",stat_try[20]);
+	fprintf(stderr,"%10d\n",stat_try[21]);
 
 	fprintf(stderr,"Ok :\t");
-	fprintf(stderr,"%7d\t",stat_ok[0]);
-	fprintf(stderr,"%7d\t",stat_ok[4]);
-	fprintf(stderr,"%7d\t",stat_ok[5]);
-	fprintf(stderr,"%7d\t",stat_ok[11]);
-	fprintf(stderr,"%7d\t",stat_ok[16]);
-	fprintf(stderr,"%7d\t",stat_ok[17]);
-	fprintf(stderr,"%7d\t",stat_ok[18]);
-	fprintf(stderr,"%7d\t",stat_ok[20]);
-	fprintf(stderr,"%7d\t",stat_ok[21]);
-	fprintf(stderr,"%7d\t",stat_ok[24]);
+	fprintf(stderr,"%10d\t",stat_ok[0]);
+	fprintf(stderr,"%10d\t",stat_ok[4]);
+	fprintf(stderr,"%10d\t",stat_ok[5]);
+	fprintf(stderr,"%10d\t",stat_ok[11]);
+	fprintf(stderr,"%10d\t",stat_ok[16]);
+	fprintf(stderr,"%10d\t",stat_ok[17]);
+	fprintf(stderr,"%10d\t",stat_ok[18]);
+	fprintf(stderr,"%10d\t",stat_ok[20]);
+	fprintf(stderr,"%10d\n",stat_ok[21]);
 	tot_ok=stat_ok[0]+stat_ok[4]+stat_ok[5]+stat_ok[11]+stat_ok[16]+stat_ok[17]+stat_ok[18]+stat_ok[20]+stat_ok[21]+stat_ok[24];
-	fprintf(stderr,"%d\n",tot_ok);
 
 	fprintf(stderr,"Guess :\t");
-	fprintf(stderr,"%7d\t",stat_gs[0]);
-	fprintf(stderr,"%7d\t",stat_gs[4]);
-	fprintf(stderr,"%7d\t",stat_gs[5]);
-	fprintf(stderr,"%7d\t",stat_gs[11]);
-	fprintf(stderr,"%7d\t",stat_gs[16]);
-	fprintf(stderr,"%7d\t",stat_gs[17]);
-	fprintf(stderr,"%7d\t",stat_gs[18]);
-	fprintf(stderr,"%7d\t",stat_gs[20]);
-	fprintf(stderr,"%7d\t",stat_gs[21]);
-	fprintf(stderr,"%7d\t",stat_gs[24]);
+	fprintf(stderr,"%10d\t",stat_gs[0]);
+	fprintf(stderr,"%10d\t",stat_gs[4]);
+	fprintf(stderr,"%10d\t",stat_gs[5]);
+	fprintf(stderr,"%10d\t",stat_gs[11]);
+	fprintf(stderr,"%10d\t",stat_gs[16]);
+	fprintf(stderr,"%10d\t",stat_gs[17]);
+	fprintf(stderr,"%10d\t",stat_gs[18]);
+	fprintf(stderr,"%10d\t",stat_gs[20]);
+	fprintf(stderr,"%10d\n",stat_gs[21]);
 	tot_fi=stat_gs[0]+stat_gs[4]+stat_gs[5]+stat_gs[11]+stat_gs[16]+stat_gs[17]+stat_gs[18]+stat_gs[20]+stat_gs[21]+stat_gs[24];
-	fprintf(stderr,"%d\n",tot_fi);
 
-	fprintf(stderr,"\t\t\t\t\t\t\t\t\t\t\t%d\n",tot_ok+tot_fi);
+	fprintf(stderr,"Total :\t%10d\n",tot_ok+tot_fi);
 }
