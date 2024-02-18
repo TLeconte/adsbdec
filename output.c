@@ -206,7 +206,17 @@ int formatpkt(blk_t *blk,char *pkt)
     int i,o,len;
     char *p;
     char ch;
-    uint8_t lvl;
+    uint8_t lvl = 0 ;
+    uint64_t ts12M;
+
+#ifdef WITH_RTL
+     lvl=nearbyint(sqrt(blk->pw))*2;
+     ts12M=blk->ts;
+#endif
+#ifdef WITH_AIR
+     lvl=nearbyint(sqrt(blk->pw))/8;
+     ts12M=(blk->ts*12)/10;
+#endif
 
     p=pkt;
     switch (outformat) {
@@ -215,7 +225,7 @@ int formatpkt(blk_t *blk,char *pkt)
 		o = 1;
 		break;
 	case 1:
-		sprintf(pkt, "@%012" PRIX64, blk->ts & 0xffffffffffff);
+		sprintf(pkt, "@%012" PRIX64, ts12M & 0xffffffffffff);
 		o = 13;
 		break;
 	default:
@@ -223,13 +233,12 @@ int formatpkt(blk_t *blk,char *pkt)
 		*p++ = 0x1a;
 		if(blk->len==7) *p++ = '2'; else *p++ = '3';	// msg type
 		for(i=40;i>=0;i-=8) {
-			*p++ = (ch = (blk->ts >> i));
+			*p++ = (ch = (ts12M >> i));
 			if (0x1a == ch) {
         			*p++ = ch;
     			}
 		}
-		lvl=nearbyint(sqrt(blk->pw))*2;
-		if(lvl>255) lvl=255;
+     		if(lvl>255) lvl=255;
 		*p++ = lvl; 
 		break;
       }

@@ -37,11 +37,11 @@ extern void print_stats(void);
 static void usage(void)
 {
 	printf("adsbdec airspy ADSB decoder 1.0 Copyright (c) 2018 Thierry Leconte  \n\n");
-	printf("usage : adsbdec [-d] [-c] [-e] [-m] [-b] [-g 0-21 ] [-f filename] [-s addr[:port]] [-l addr[:port]]\n\n");
+	printf("usage : adsbdec [-a] [-e] [-c] [-e] [-m] [-b] [-g 0-21 ] [-f filename] [-s addr[:port]] [-l addr[:port]]\n\n");
 	printf
 	    ("By default receive samples from airspy and output long adsb frames in raw avr format on stdout\n");
 	printf("Options :\n");
-	printf("\t-d : output short frames too\n");
+	printf("\t-a : output short frames too\n");
 	printf("\t-e : use 1 bit error correction\n");
 	printf("\t-m : output avrmlat format (ie : with 12Mhz timestamp)\n");
 	printf("\t-b : output binary beast format\n");
@@ -58,7 +58,7 @@ int main(int argc, char **argv)
 	struct sigaction sigact;
 
 
-	while ((c = getopt(argc, argv, "cf:s:l:g:demb")) != EOF) {
+	while ((c = getopt(argc, argv, "cf:s:l:g:aemb")) != EOF) {
 		switch (c) {
 		case 'f':
 			filename = optarg;
@@ -74,7 +74,7 @@ int main(int argc, char **argv)
 		case 'g':
 			gain = atoi(optarg);
 			break;
-		case 'd':
+		case 'a':
 			df = 1;
 			break;
 		case 'e':
