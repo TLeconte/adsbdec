@@ -25,11 +25,12 @@
 #include <time.h>
 #include <pthread.h>
 #include <rtl-sdr.h>
+#include <complex.h>
 #include "adsbdec.h"
 
 int gain = 493;
 
-#define SDRINRATE  2400000
+#define SDRINRATE  2500000
 static rtlsdr_dev_t *dev = NULL;
 
 #define IQBUFFSZ (128*1024)
@@ -39,38 +40,29 @@ static uint32_t inidx = 0;
 
 static void in_callback(unsigned char *r, uint32_t len, void *ctx)
 {
-        static float pi,pq;
+        static complex float prev=0;
+	const complex float zr = 128.5+128.5*I;
 
         int rlen;
 
-        if(len&1) fprintf(stderr,"odd input buffer len\n");
-
         for (int i = 0; i < len; ) {
-                float ci,cq;
-                float vi,vq;
+                complex float curr;
+                complex float val;
 
-                ci=(float)r[i++]-128.5;
-                cq=(float)r[i++]-128.5;
+                curr=((float)r[i++]+(float)r[i++]*I) - zr;
 
-                vi=0.9045*pi+0.0955*ci;
-                vq=0.9045*pq+0.0955*cq;
-                ampbuff[inidx++]=(vi*vi+vq*vq);
+		val=0.8536*prev+0.1464*curr;
+                ampbuff[inidx++]=creal(val)*creal(val)+cimag(val)*cimag(val);
 
-                vi=0.6545*pi+0.3455*ci;
-                vq=0.6545*pq+0.3455*cq;
-                ampbuff[inidx++]=(vi*vi+vq*vq);
+		val=0.5*prev+0.5*curr;
+                ampbuff[inidx++]=creal(val)*creal(val)+cimag(val)*cimag(val);
 
-                vi=0.3455*pi+0.6545*ci;
-                vq=0.3455*pq+0.6545*cq;
-                ampbuff[inidx++]=(vi*vi+vq*vq);
+		val=0.1464*prev+0.8536*curr;
+                ampbuff[inidx++]=creal(val)*creal(val)+cimag(val)*cimag(val);
 
-                vi=0.0955*pi+0.9045*ci;
-                vq=0.0955*pq+0.9045*cq;
-                ampbuff[inidx++]=(vi*vi+vq*vq);
+                ampbuff[inidx++]=creal(curr)*creal(curr)+cimag(curr)*cimag(curr);
 
-                ampbuff[inidx++]=(ci*ci+cq*cq);
-
-		pi=ci;pq=cq;
+		prev=curr;
 
                 if(inidx>=APBUFFSZ) {
                         rlen = deqframe(ampbuff, inidx);

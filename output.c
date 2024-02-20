@@ -211,12 +211,11 @@ int formatpkt(blk_t *blk,char *pkt)
 
 #ifdef WITH_RTL
      lvl=nearbyint(sqrt(blk->pw))*2;
-     ts12M=blk->ts;
 #endif
 #ifdef WITH_AIR
      lvl=nearbyint(sqrt(blk->pw))/8;
-     ts12M=(blk->ts*12)/10;
 #endif
+     ts12M=(blk->ts*12)/10;
 
     p=pkt;
     switch (outformat) {
@@ -276,14 +275,13 @@ int runOutput(void)
         pthread_t th;
         pthread_create(&th, NULL, fileInput, NULL);
     } else {
-        if(initSDR()<0)
-	     return -1;
+       	if(initSDR()<0)
+	     	return -1;
+       if (outmode ==0) {
+		if(startSDR()<0)
+			return -1;
+       }
     }
-
-    if (outmode ==0) {
-	if(startSDR()<0)
-		return -1;
-   }
 
    do {
 	if(do_exit) 

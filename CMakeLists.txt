@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.2)
 project (adsbdec C)
 
-add_compile_options(-Ofast -march=native)
+add_compile_options(-O3 -march=native)
 
 add_executable(adsbdec demod.c main.c crc.c output.c valid.c )
 

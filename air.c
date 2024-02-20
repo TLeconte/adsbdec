@@ -24,18 +24,19 @@
 #include <fcntl.h>
 #include <time.h>
 #include <libairspy/airspy.h>
+#include <complex.h>
 #include "adsbdec.h"
 
 #define AIR_SAMPLE_RATE 20000000
 int gain = 18;
 
 #define APBUFFSZ (8196*PULSEW)
-#define FILTERLEN 8 
 
-static float ampbuff[APBUFFSZ];
+static float ampbuff[APBUFFSZ+2];
 static uint32_t inidx = 0;
 static uint32_t fidx = 0 ;
-static int rbuff[FILTERLEN];
+static complex int rbuff[PULSEW]={0};
+static complex int fval=0;
 
 extern void handlerExit(int sig);
 
@@ -44,30 +45,30 @@ static void decodeiq(const unsigned short *r, const int len)
 
 	int rlen;
 
-	if(len&1) fprintf(stderr,"odd input buffer len\n");
-
 	for (int i = 0; i < len; ) {
-		int sumi,sumq;
+		complex int val;
+		int a,b;
 
-		/* downsample by 2 */
-		rbuff[fidx%FILTERLEN] = (int)r[i]-0x800;i++;
+		a = (int)r[i]-0x800;i++;
+		b = (int)r[i]-0x800;i++;
+		val=(a+b)+(-a+b)*I;
+
+		fval=fval+val-rbuff[fidx%PULSEW];
+		rbuff[fidx%PULSEW] = val ; 
 		fidx++;
-		rbuff[fidx%FILTERLEN] = (int)r[i]-0x800;i++;
+
+		ampbuff[inidx]=creal(fval)*creal(fval)+cimag(fval)*cimag(fval);
+		inidx++;
+
+		a = (int)r[i]-0x800;i++;
+		b = (int)r[i]-0x800;i++;
+		val=-(a+b)+(a-b)*I;
+
+		fval=fval+val-rbuff[fidx%PULSEW];
+		rbuff[fidx%PULSEW] = val ; 
 		fidx++;
 
-		/* box filter + fs/4 mixing  unrolled */
-		sumi=sumq=0;
-		sumq+=rbuff[0];
-		sumi+=rbuff[1];
-		sumq-=rbuff[2];
-		sumi-=rbuff[3];
-		sumq+=rbuff[4];
-		sumi+=rbuff[5];
-		sumq-=rbuff[6];
-		sumi-=rbuff[7];
-
-		/* iq to power */
-		ampbuff[inidx]=(sumi*sumi+sumq*sumq);
+		ampbuff[inidx]=creal(fval)*creal(fval)+cimag(fval)*cimag(fval);
 		inidx++;
 
 		if(inidx>=APBUFFSZ) {
