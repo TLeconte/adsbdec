@@ -25,8 +25,8 @@
 
 int df = 0;
 
-extern int validShort(uint8_t *frame,const uint64_t ts,uint32_t pw);
-extern int validLong(uint8_t *frame, const uint64_t ts,uint32_t pw);
+extern int validShort(uint8_t *frame, const uint8_t type, const uint64_t ts,uint32_t pw);
+extern int validLong(uint8_t *frame, const uint8_t type, const uint64_t ts,uint32_t pw);
 
 static inline uint8_t getabyte(const float *ampbuff, const int idx) {
 	uint8_t bits=0;
@@ -46,7 +46,7 @@ static inline uint8_t getabyte(const float *ampbuff, const int idx) {
 
 int deqframe(const float *ampbuff, const int len)
 {
-	static uint32_t pv0, pv1, pv2;
+	static float pv0, pv1, pv2;
 	static uint64_t ts=0;
 	int idx;
 
@@ -65,8 +65,9 @@ int deqframe(const float *ampbuff, const int len)
 	/* peak detection */
 	if (pv1 > pv0 && pv1 > pv2) {
 		int lidx;
-		uint32_t ns;
+		float ns;
 		uint8_t frame[14];
+		uint8_t type;
 		int flen;
 		int fmlen;
 
@@ -86,11 +87,12 @@ int deqframe(const float *ampbuff, const int len)
 		/* decode 1st byte to get len */
 		frame[0]=getabyte(ampbuff,lidx);
 
-		switch(frame[0] >> 3) {
+		type = frame[0] >> 3 ;
+
+		switch(type) {
         		case 0: case 4: case 5:
 				fmlen=7;
 				if(df==0) {
-					pv1=pv2=0;
 					idx++;
 					continue;
 				}
@@ -102,7 +104,6 @@ int deqframe(const float *ampbuff, const int len)
 				fmlen=14;
 				break;
         		default:
-				pv1=pv2=0;
 				idx++;
 				continue;
     		}
@@ -114,17 +115,19 @@ int deqframe(const float *ampbuff, const int len)
 
 		switch(fmlen) {
 			case  7 :
-				if (validShort(frame,ts,pv1/4)) {
+				if (validShort(frame,type,ts,pv1/4)) {
 					pv1=pv2=0;
 					idx+= 128 * PULSEW;
 					continue;
 				}
+				break;
 			case 14 :
-				if (validLong(frame,ts,pv1/4)) {
+				if (validLong(frame,type,ts,pv1/4)) {
 					pv1=pv2=0;
 					idx+= 240 * PULSEW;
 					continue;
 				}
+				break;
 		}
 
 	}
