@@ -7,7 +7,7 @@ Documentation=https://github.com/TLeconte/adsbdec
 [Service]
 
 EnvironmentFile=/etc/default/adsbdec
-ExecStart=/usr/bin/taskset -c $AFFINITY /usr/local/bin/adsbdec $OPTIONS $NET $G $GAIN 
+ExecStart=/usr/local/bin/adsbdec -g $GAIN $OPTIONS $NET  
 
 SyslogIdentifier=adsbdec
 User=root
