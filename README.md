@@ -31,4 +31,9 @@ If you need that adsbdec act as server (like dump1090) :
    Need libusb and libairspy
 
   Just do
-> make
+```shell
+mkdir build
+cd build
+cmake ..
+make
+```
