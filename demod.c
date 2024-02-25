@@ -60,7 +60,7 @@ int deqframe(const float *ampbuff, const int len)
 	/* preamble power */
 	pv2 =
 	    ampbuff[idx] + ampbuff[idx + 2 * PULSEW] +
-	     ampbuff[idx + 7 * PULSEW] + ampbuff[idx + 9 * PULSEW];
+	    ampbuff[idx + 7 * PULSEW] + ampbuff[idx + 9 * PULSEW];
 
 	/* peak detection */
 	if (pv1 > pv0 && pv1 > pv2) {
@@ -74,7 +74,9 @@ int deqframe(const float *ampbuff, const int len)
 		lidx = idx - 1 ;
 
 		/* noise estimation */
-		ns = ampbuff[lidx + PULSEW] + ampbuff[lidx + 3 * PULSEW] + ampbuff[lidx + 4 * PULSEW] + ampbuff[lidx + 5 * PULSEW] + ampbuff[lidx + 6 * PULSEW] + ampbuff[lidx + 8 * PULSEW] ; 
+		ns = ampbuff[lidx + PULSEW] + ampbuff[lidx + 3 * PULSEW] + ampbuff[lidx + 4 * PULSEW] + ampbuff[lidx + 5 * PULSEW] 
+		       	+ ampbuff[lidx + 6 * PULSEW] + ampbuff[lidx + 8 * PULSEW] +
+		       	+ ampbuff[lidx + 11 * PULSEW] + 2 * ampbuff[lidx + 14 * PULSEW]; 
 
 		/* s/n test */
 		if (pv1 < 2 * ns)  {
