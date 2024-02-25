@@ -213,7 +213,7 @@ int formatpkt(blk_t *blk,char *pkt)
      lvl=nearbyint(sqrt(blk->pw))*2;
 #endif
 #ifdef WITH_AIR
-     lvl=nearbyint(sqrt(blk->pw))/8;
+     lvl=nearbyint(sqrt(blk->pw))/8/5;
 #endif
      ts12M=(blk->ts*12)/10;
 
