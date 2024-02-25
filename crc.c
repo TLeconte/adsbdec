@@ -41,9 +41,9 @@ static const uint32_t error_table[112] = {
 uint32_t testFix(uint8_t *frame, const uint32_t ecrc)
 {
 	int i;
-	const int n = 14;
+	const int n = 11;
 
-	for (i = 0; i < n * 8; i++) {
+	for (i = 8; i < n * 8; i++) {
 		if ((error_table[i]^ecrc) == 0) {
 			return i;
 		}

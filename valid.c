@@ -173,7 +173,7 @@ int validLong(uint8_t *frame, const uint8_t type, const uint64_t ts, uint32_t pw
 		if( nb >= 0 ) {
 			fixChecksum(frame,nb);
 			if(findaircraft(icao(frame))){
-				stat_gs[frame[0] >> 3]++;
+				stat_gs[type]++;
 				netout(frame, 14,ts,pw);
 				return 1;
 			}
