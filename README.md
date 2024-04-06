@@ -28,10 +28,15 @@ If you need that adsbdec act as server (like dump1090) :
 
 ## Compile
 
-   Need libusb and libairspy or librtlsdr
+   Need gcc cmake libusb-dev and libairspy-dev or librtlsdr-dev
 
   Just do 
 
-> mkdir build ; cd build 
-> cmake -Dairspy=ON  OR -Drtl=ON ..
-> make
+> mkdir build ; cd build
+  
+> cmake -Dairspy=ON .. ; make ; sudo make install
+
+or
+
+> cmake -Drtl=ON .. ; make ; sudo make install
+
