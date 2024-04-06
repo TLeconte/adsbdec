@@ -7,7 +7,7 @@ Documentation=https://github.com/TLeconte/adsbdec
 [Service]
 
 EnvironmentFile=/etc/default/adsbdec
-ExecStart=/usr/local/bin/adsbdec -g $GAIN $OPTIONS $NET  
+ExecStart=/usr/local/bin/adsbdec $GAIN $OPTIONS $NET  
 
 SyslogIdentifier=adsbdec
 User=root

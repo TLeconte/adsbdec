@@ -41,3 +41,6 @@ endif()
 target_link_libraries( adsbdec pthread m )
 
 install(TARGETS adsbdec RUNTIME DESTINATION bin)
+install(FILES adsbdec.service DESTINATION /lib/systemd/system) 
+install(FILES adsbdec.default RENAME adsbdec DESTINATION /etc/default) 
+
