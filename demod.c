@@ -92,17 +92,14 @@ int deqframe(const float *ampbuff, const int len)
 		type = frame[0] >> 3 ;
 
 		switch(type) {
-        		case 0: case 4: case 5:
+		       	case 11:
 				fmlen=7;
 				if(df==0) {
 					idx++;
 					continue;
 				}
 				break;
-		       	case 11:
-				fmlen=7;
-				break;
-        		case 16: case 17: case 18: case 20: case 21:
+        		case 17: case 18:
 				fmlen=14;
 				break;
         		default:

@@ -37,7 +37,7 @@ extern void print_stats(void);
 static void usage(void)
 {
 	printf("adsbdec airspy ADSB decoder 1.0 Copyright (c) 2018 Thierry Leconte  \n\n");
-	printf("usage : adsbdec [-a] [-e] [-c] [-e] [-m] [-b] [-g 0-21 ] [-f filename] [-s addr[:port]] [-l addr[:port]]\n\n");
+	printf("usage : adsbdec [-a] [-e] [-m] [-b] [-g 0-21 ] [-f filename] [-s addr[:port]] [-l addr[:port]]\n\n");
 	printf
 	    ("By default receive samples from airspy and output long adsb frames in raw avr format on stdout\n");
 	printf("Options :\n");
