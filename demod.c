@@ -43,48 +43,33 @@ static inline uint8_t getabyte(const float *ampbuff, const int idx) {
 	return bits;
 }
 
-
+#define SN 2
 int deqframe(const float *ampbuff, const int len)
 {
-	static float pv0, pv1, pv2;
 	static uint64_t ts=0;
 	int idx;
 
 	for(idx = 0; idx< len-DECOFFSET; ) {
 
+	int p1,p2;
+	int s1,s2;
+	int lidx;
+	float ns;
+	uint8_t frame[14];
+	uint8_t type;
+	int flen;
+	int fmlen;
+
 	ts++;
 
-	pv0 = pv1;
-	pv1 = pv2;
+	/* preamble detection */
+	p1 = ampbuff[idx] + ampbuff[idx + 2 * PULSEW];
+	s1 = ampbuff[idx + PULSEW] + ampbuff[idx + 3 * PULSEW];
+        p2 = ampbuff[idx + 7 * PULSEW] + ampbuff[idx + 9 * PULSEW];
+	s2 = ampbuff[idx + 6 * PULSEW] + ampbuff[idx + 8 * PULSEW];
+	if( p1 > SN * s1 && p2 > SN * s2){
 
-	/* preamble power */
-	pv2 =
-	    ampbuff[idx] + ampbuff[idx + 2 * PULSEW] +
-	    ampbuff[idx + 7 * PULSEW] + ampbuff[idx + 9 * PULSEW];
-
-	/* peak detection */
-	if (pv1 > pv0 && pv1 > pv2) {
-		int lidx;
-		float ns;
-		uint8_t frame[14];
-		uint8_t type;
-		int flen;
-		int fmlen;
-
-		lidx = idx - 1 ;
-
-		/* noise estimation */
-		ns = ampbuff[lidx + PULSEW] + ampbuff[lidx + 3 * PULSEW] + ampbuff[lidx + 4 * PULSEW] + ampbuff[lidx + 5 * PULSEW] 
-		       	+ ampbuff[lidx + 6 * PULSEW] + ampbuff[lidx + 8 * PULSEW] +
-		       	+ ampbuff[lidx + 11 * PULSEW] + 2 * ampbuff[lidx + 14 * PULSEW]; 
-
-		/* s/n test */
-		if (pv1 < 2 * ns)  {
-			idx ++;
-			continue;
-		}
-
-		lidx+=16*PULSEW;
+		lidx=idx+16*PULSEW;
 
 		/* decode 1st byte to get len */
 		frame[0]=getabyte(ampbuff,lidx);
@@ -111,19 +96,18 @@ int deqframe(const float *ampbuff, const int len)
 			lidx+=16*PULSEW;
 			frame[flen]=getabyte(ampbuff,lidx);
 		}
+		lidx+=16*PULSEW;
 
 		switch(fmlen) {
 			case  7 :
-				if (validShort(frame,type,ts,pv1/4)) {
-					pv1=pv2=0;
-					idx+= 128 * PULSEW;
+				if (validShort(frame,type,ts,(p1+p2)/4)) {
+					idx= lidx ;
 					continue;
 				}
 				break;
 			case 14 :
-				if (validLong(frame,type,ts,pv1/4)) {
-					pv1=pv2=0;
-					idx+= 240 * PULSEW;
+				if (validLong(frame,type,ts,(p1+p2)/4)) {
+					idx= lidx ;
 					continue;
 				}
 				break;
