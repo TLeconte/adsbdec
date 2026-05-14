@@ -8,7 +8,6 @@ By default receive samples from airspy and output adsb frames (DF11/DF14/17/18/2
 
 ## Options
 	-a : output short frames too
-	-e : use 1 bit error correction
 	-m : output avrmlat format (ie : with 12Mhz timestamp)
 	-b : output binary beast format
 	-g 0-21 : set linearity gain (for rtlsdr -g in tenth of db (ie : -g 450))

@@ -28,7 +28,7 @@ extern int outformat;
 extern char *filename;
 extern int gain;
 
-extern int df, errcorr;
+extern int df;
 
 extern int runOutput(void);
 extern void handlerExit(int sig);
@@ -42,7 +42,6 @@ static void usage(void)
 	    ("By default receive samples from airspy and output long adsb frames in raw avr format on stdout\n");
 	printf("Options :\n");
 	printf("\t-a : output short frames too\n");
-	printf("\t-e : use 1 bit error correction\n");
 	printf("\t-m : output avrmlat format (ie : with 12Mhz timestamp)\n");
 	printf("\t-b : output binary beast format\n");
 	printf("\t-g 0-21 : set linearity gain\n");
@@ -76,9 +75,6 @@ int main(int argc, char **argv)
 			break;
 		case 'a':
 			df = 1;
-			break;
-		case 'e':
-			errcorr = 1;
 			break;
 		case 'm':
 			outformat = 1;

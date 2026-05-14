@@ -1,7 +1,3 @@
-extern uint32_t testFix(uint8_t *message, const uint32_t ecrc);
-extern uint32_t testFix11(uint8_t *message, const uint32_t ecrc);
-extern void fixChecksum(unsigned char *message, const unsigned int nb);
-
 static const uint32_t crc_table[256] = {
         0x000000, 0xfff409, 0x001c1b, 0xffe812, 0x003836, 0xffcc3f, 0x00242d, 0xffd024,
         0x00706c, 0xff8465, 0x006c77, 0xff987e, 0x00485a, 0xffbc53, 0x005441, 0xffa048,

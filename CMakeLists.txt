@@ -3,7 +3,7 @@ project (adsbdec C)
 
 add_compile_options(-O3 -march=native)
 
-add_executable(adsbdec demod.c main.c crc.c output.c valid.c )
+add_executable(adsbdec demod.c main.c output.c valid.c )
 
 option(rtl "Compiling for rtl sdr" )
 if(rtl)

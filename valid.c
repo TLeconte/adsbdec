@@ -74,16 +74,6 @@ int validLong(uint8_t *frame, const uint8_t type, const uint64_t ts, uint32_t pw
 		return 1;
 	
 	}
-	if(errcorr) {
-		int nb;
-		nb = testFix(frame, crc);
-		if( nb >= 0 ) {
-			stat_ec[type]++;
-			fixChecksum(frame,nb);
-			netout(frame, 14,ts,pw);
-			return 1;
-		}
-	}
 
 	return 0;
 }
