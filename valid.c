@@ -29,7 +29,6 @@ int errcorr = 0;
 
 static uint32_t stat_try[26] = { 0 };
 static uint32_t stat_ok[26] = { 0 };
-static uint32_t stat_ec[26] = { 0 };
 
 
 static inline uint32_t icao(uint8_t *frame) 
@@ -93,12 +92,6 @@ void print_stats(void)
 	fprintf(stderr,"%10d\t",stat_ok[17]);
 	fprintf(stderr,"%10d\n",stat_ok[18]);
 	tot_ok=stat_ok[11]+stat_ok[17]+stat_ok[18];
-
-	fprintf(stderr,"ECC :\t");
-	fprintf(stderr,"%10d\t",stat_ec[11]);
-	fprintf(stderr,"%10d\t",stat_ec[17]);
-	fprintf(stderr,"%10d\n",stat_ec[18]);
-	tot_fi=stat_ec[11]+stat_ec[17]+stat_ec[18];
 
 	fprintf(stderr,"Total :\t%10d\n",tot_ok+tot_fi);
 }

@@ -2,12 +2,12 @@
 An ADSB open source decoder for the airspy R2 and RTLSDR
 
 ## Usage 
-> adsbdec [-a] [-b] [-e] [-m] [-g gain] [-f filename] [-s addr[:port]]
+> adsbdec [-a] [-b] [-m] [-g gain] [-f filename] [-s addr[:port]]
 
 By default receive samples from airspy and output adsb frames (DF11/DF14/17/18/20/21) in raw avr format on stdout
 
 ## Options
-	-a : output short frames too
+	-a : output ground frames too
 	-m : output avrmlat format (ie : with 12Mhz timestamp)
 	-b : output binary beast format
 	-g 0-21 : set linearity gain (for rtlsdr -g in tenth of db (ie : -g 450))
@@ -20,10 +20,10 @@ Man could use adsbdec to send data to any other avr format compatible server (VR
 ## Example
 
 For VRS select "Push receiver" , "AVR format", and :
-> adsbdec -e -s 192.168.0.10:30001
+> adsbdec -s 192.168.0.10:30001
 
 If you need that adsbdec act as server (like dump1090) :
-> adsbdec -e -l 192.168.0.10:30002
+> adsbdec -l 192.168.0.10:30002
 
 ## Compile
 

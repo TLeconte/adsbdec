@@ -79,13 +79,13 @@ int deqframe(const float *ampbuff, const int len)
 		switch(type) {
 		       	case 11:
 				fmlen=7;
+				break;
+        		case 17: case 18:
+				fmlen=14;
 				if(df==0) {
 					idx++;
 					continue;
 				}
-				break;
-        		case 17: case 18:
-				fmlen=14;
 				break;
         		default:
 				idx++;
