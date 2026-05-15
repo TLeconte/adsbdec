@@ -80,7 +80,10 @@ int deqframe(const float *ampbuff, const int len)
 		       	case 11:
 				fmlen=7;
 				break;
-        		case 17: case 18:
+        		case 17:
+				fmlen=14;
+				break;
+			case 18:
 				fmlen=14;
 				if(df==0) {
 					idx++;
