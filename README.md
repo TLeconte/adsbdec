@@ -10,12 +10,12 @@ By default receive samples from airspy and output adsb frames (DF11/DF14/17/18/2
 	-a : output ground frames too
 	-m : output avrmlat format (ie : with 12Mhz timestamp)
 	-b : output binary beast format
-	-g 0-21 : set linearity gain (for rtlsdr -g in tenth of db (ie : -g 450))
+	-g 0-21 : set linearity gain 
 	-f : input from filename instead of airspy (raw signed 16 bits real format)
 	-s addr[:port] : send ouput via TCP to server at address addr:port (default port : 30001)
 	-l addr[:port] : listen to addr:port (default port : 30002) and accept a TCP connection where to send output 
 
-Man could use adsbdec to send data to any other avr format compatible server (VRS, feeders for main adsb web site, etc )
+Man could use adsbdec to send data to any other avr or beast format compatible server (VRS, readsb, feeders for main adsb web site, etc )
 
 ## Example
 
@@ -27,15 +27,12 @@ If you need that adsbdec act as server (like dump1090) :
 
 ## Compile
 
-   Need gcc cmake libusb-dev and libairspy-dev or librtlsdr-dev
+   Need gcc cmake libusb-dev and libairspy-dev 
 
   Just do 
 
 > mkdir build ; cd build
   
-> cmake -Dairspy=ON .. ; make ; sudo make install
+> cmake .. ; make ; sudo make install
 
-or
-
-> cmake -Drtl=ON .. ; make ; sudo make install
 
