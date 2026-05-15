@@ -32,11 +32,14 @@ int gain = 18;
 
 #define APBUFFSZ (8196*PULSEW)
 
-static float ampbuff[APBUFFSZ+2];
-static uint32_t inidx = 0;
-static uint32_t fidx = 0 ;
-static complex int rbuff[PULSEW]={0};
-static complex int fval=0;
+static float ampbuff[APBUFFSZ+4];
+static uint32_t aidx = 0;
+
+static complex float v1={0};
+static complex float v2={0};
+static complex float v3={0};
+static complex float v4={0};
+static complex float sumval=0;
 
 extern void handlerExit(int sig);
 
@@ -46,42 +49,60 @@ static void decodeiq(const unsigned short *r, const int len)
 	int rlen;
 
 	for (int i = 0; i < len; ) {
-		complex int val;
+		complex float val;
 		int a,b;
 
 		a = (int)r[i]-0x800;i++;
 		b = (int)r[i]-0x800;i++;
 		val=(a+b)+(-a+b)*I;
 
-		fval=fval+val-rbuff[fidx%PULSEW];
-		rbuff[fidx%PULSEW] = val ; 
-		fidx++;
+		sumval=sumval+val-v1;
+		v1 = val ; 
 
-		ampbuff[inidx]=creal(fval)*creal(fval)+cimag(fval)*cimag(fval);
-		inidx++;
+		ampbuff[aidx]=creal(sumval)*creal(sumval)+cimag(sumval)*cimag(sumval);
+		aidx++;
 
 		a = (int)r[i]-0x800;i++;
 		b = (int)r[i]-0x800;i++;
 		val=-(a+b)+(a-b)*I;
 
-		fval=fval+val-rbuff[fidx%PULSEW];
-		rbuff[fidx%PULSEW] = val ; 
-		fidx++;
+		sumval=sumval+val-v2;
+		v2 = val ; 
 
-		ampbuff[inidx]=creal(fval)*creal(fval)+cimag(fval)*cimag(fval);
-		inidx++;
+		ampbuff[aidx]=creal(sumval)*creal(sumval)+cimag(sumval)*cimag(sumval);
+		aidx++;
 
-		if(inidx>=APBUFFSZ) {
-			rlen = deqframe(ampbuff, inidx);
-			if(rlen<inidx) 
-				memcpy(ampbuff,&(ampbuff[rlen]),(inidx-rlen)*sizeof(float));
-			inidx=inidx-rlen;
+		a = (int)r[i]-0x800;i++;
+		b = (int)r[i]-0x800;i++;
+		val=(a+b)+(-a+b)*I;
+
+		sumval=sumval+val-v3;
+		v3 = val ; 
+
+		ampbuff[aidx]=creal(sumval)*creal(sumval)+cimag(sumval)*cimag(sumval);
+		aidx++;
+
+		a = (int)r[i]-0x800;i++;
+		b = (int)r[i]-0x800;i++;
+		val=-(a+b)+(a-b)*I;
+
+		sumval=sumval+val-v4;
+		v4 = val; 
+
+		ampbuff[aidx]=creal(sumval)*creal(sumval)+cimag(sumval)*cimag(sumval);
+		aidx++;
+
+		if(aidx>=APBUFFSZ) {
+			rlen = deqframe(ampbuff, aidx);
+			if(rlen<aidx) 
+				memcpy(ampbuff,&(ampbuff[rlen]),(aidx-rlen)*sizeof(float));
+			aidx=aidx-rlen;
 		}	
 	}
-	rlen = deqframe(ampbuff, inidx);
-	if(rlen<inidx) 
-		memcpy(ampbuff,&(ampbuff[rlen]),(inidx-rlen)*sizeof(float));
-	inidx=inidx-rlen;
+	rlen = deqframe(ampbuff, aidx);
+	if(rlen<aidx) 
+		memcpy(ampbuff,&(ampbuff[rlen]),(aidx-rlen)*sizeof(float));
+	aidx=aidx-rlen;
 }
 
 

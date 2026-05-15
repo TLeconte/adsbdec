@@ -25,8 +25,8 @@
 
 int df = 0;
 
-extern int validShort(uint8_t *frame, const uint8_t type, const uint64_t ts,uint32_t pw);
-extern int validLong(uint8_t *frame, const uint8_t type, const uint64_t ts,uint32_t pw);
+extern int validShort(uint8_t *frame, const uint64_t ts,uint32_t pw);
+extern int validLong(uint8_t *frame, const uint64_t ts,uint32_t pw);
 
 static inline uint8_t getabyte(const float *ampbuff, const int idx) {
 	uint8_t bits=0;
@@ -43,6 +43,43 @@ static inline uint8_t getabyte(const float *ampbuff, const int idx) {
 	return bits;
 }
 
+static inline uint8_t getdf(const float *ampbuff, const int idx, int *len) {
+	uint8_t bits=0;
+
+	// like getabyte but specialized for df 11,17 & 18
+	
+	if (ampbuff[idx] > ampbuff[idx + PULSEW]) {
+		// 17, 18
+		bits |= 0x80;
+
+		if (ampbuff[idx + 2 * PULSEW] > ampbuff[idx + 3 * PULSEW]) return 0;
+		if (ampbuff[idx + 4 * PULSEW] > ampbuff[idx + 5 * PULSEW]) return 0;
+		if (ampbuff[idx + 6 * PULSEW] > ampbuff[idx + 7 * PULSEW]) {
+			// 18
+			if(df == 0) return 0;
+			bits |= 0x10;
+			if (ampbuff[idx + 8 * PULSEW] > ampbuff[idx + 9 * PULSEW]) return 0;
+			*len=14;
+		} else {
+			// 17
+			if (ampbuff[idx + 8 * PULSEW] > ampbuff[idx + 9 * PULSEW]) bits |= 0x08; else return 0;
+			*len=14;
+		}
+	} else {
+		// 11
+		if (ampbuff[idx + 2 * PULSEW] > ampbuff[idx + 3 * PULSEW]) bits |= 0x40; else return 0;
+		if (ampbuff[idx + 4 * PULSEW] > ampbuff[idx + 5 * PULSEW]) return 0;
+		if (ampbuff[idx + 6 * PULSEW] > ampbuff[idx + 7 * PULSEW]) bits |= 0x10; else return 0;
+		if (ampbuff[idx + 8 * PULSEW] > ampbuff[idx + 9 * PULSEW]) bits |= 0x08; else return 0;
+		*len=7;
+	}
+
+	if (ampbuff[idx + 10 * PULSEW] > ampbuff[idx + 11 * PULSEW]) bits |= 0x04;
+	if (ampbuff[idx + 12 * PULSEW] > ampbuff[idx + 13 * PULSEW]) bits |= 0x02;
+	if (ampbuff[idx + 14 * PULSEW] > ampbuff[idx + 15 * PULSEW]) bits |= 0x01;
+	return bits;
+}
+
 #define SN 2
 int deqframe(const float *ampbuff, const int len)
 {
@@ -56,7 +93,6 @@ int deqframe(const float *ampbuff, const int len)
 	int lidx;
 	float ns;
 	uint8_t frame[14];
-	uint8_t type;
 	int flen;
 	int fmlen;
 
@@ -67,32 +103,17 @@ int deqframe(const float *ampbuff, const int len)
 	s1 = ampbuff[idx + PULSEW] + ampbuff[idx + 3 * PULSEW];
         p2 = ampbuff[idx + 7 * PULSEW] + ampbuff[idx + 9 * PULSEW];
 	s2 = ampbuff[idx + 6 * PULSEW] + ampbuff[idx + 8 * PULSEW];
-	if( p1 > SN * s1 && p2 > SN * s2){
 
+	if( p1 > SN * s1 && p2 > SN * s2)
+	{
+	
 		lidx=idx+16*PULSEW;
 
-		/* decode 1st byte to get len */
-		frame[0]=getabyte(ampbuff,lidx);
-
-		type = frame[0] >> 3 ;
-
-		switch(type) {
-		       	case 11:
-				fmlen=7;
-				break;
-        		case 17:
-				fmlen=14;
-				break;
-			case 18:
-				fmlen=14;
-				if(df==0) {
-					idx++;
-					continue;
-				}
-				break;
-        		default:
-				idx++;
-				continue;
+		/* decode 1st byte to get df */
+		frame[0]=getdf(ampbuff,lidx,&fmlen);
+		if(frame[0] == 0 ) {
+			idx++;
+			continue;
     		}
 
 		for(flen=1;flen<fmlen;flen++) {
@@ -103,13 +124,13 @@ int deqframe(const float *ampbuff, const int len)
 
 		switch(fmlen) {
 			case  7 :
-				if (validShort(frame,type,ts,(p1+p2)/4)) {
+				if (validShort(frame,ts,(p1+p2)/4)) {
 					idx= lidx ;
 					continue;
 				}
 				break;
 			case 14 :
-				if (validLong(frame,type,ts,(p1+p2)/4)) {
+				if (validLong(frame,ts,(p1+p2)/4)) {
 					idx= lidx ;
 					continue;
 				}

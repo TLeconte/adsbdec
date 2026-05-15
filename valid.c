@@ -36,11 +36,13 @@ static inline uint32_t icao(uint8_t *frame)
 	return (frame[1]<<16)|(frame[2]<<8)|frame[3];
 }
 
-int validShort(uint8_t *frame, const uint8_t type, const uint64_t ts, uint32_t pw)
+int validShort(uint8_t *frame, const uint64_t ts, uint32_t pw)
 {
 	uint32_t crc=0;
+	uint8_t type;
 	int n;
 
+	type=frame[0]>>3;
 	stat_try[type]++;
 
 	for(n=0;n<4;n++)
@@ -56,11 +58,13 @@ int validShort(uint8_t *frame, const uint8_t type, const uint64_t ts, uint32_t p
 	return 0;
 }
 
-int validLong(uint8_t *frame, const uint8_t type, const uint64_t ts, uint32_t pw)
+int validLong(uint8_t *frame, const uint64_t ts, uint32_t pw)
 {
 	uint32_t crc=0;
+	uint8_t type;
 	int n;
 
+	type=frame[0]>>3;
 	stat_try[type]++;
 
 	for(n=0;n<11;n++)
