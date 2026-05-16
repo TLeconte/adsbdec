@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.30)
 project (adsbdec C)
 
 add_compile_options(-O3 -march=native)

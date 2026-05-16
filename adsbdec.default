@@ -1,3 +1,3 @@
-GAIN = -g 18
-NET = -l 127.0.0.1:30005
-OPTIONS= -a -b -e
+GAIN = -g 19
+NET = -s 127.0.0.1:30104
+OPTIONS= -b
