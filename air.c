@@ -27,19 +27,28 @@
 #include <complex.h>
 #include "adsbdec.h"
 
-#define AIR_SAMPLE_RATE 20000000
 int gain = 18;
+#define AIR_SAMPLE_RATE 20000000
+
+#define DSFLTLEN 14
+static float fbuff[DSFLTLEN];
+static uint32_t fidx = 0;
+
+static const complex float dsfilter[2*DSFLTLEN]={
+   -0.012627 + 0.012627*I,  -0.025254 - 0.025254*I,   0.037881 - 0.037881*I,
+   0.050508 + 0.050508*I,  -0.063135 + 0.063135*I,  -0.075761 - 0.075761*I,   0.088388 - 0.088388*I,
+   0.088388 + 0.088388*I,  -0.075761 + 0.075761*I,  -0.063135 - 0.063135*I,   0.050508 - 0.050508*I,
+   0.037881 + 0.037881*I,  -0.025254 + 0.025254*I,  -0.012627 - 0.012627*I, 
+   -0.012627 + 0.012627*I,  -0.025254 - 0.025254*I,   0.037881 - 0.037881*I,
+   0.050508 + 0.050508*I,  -0.063135 + 0.063135*I,  -0.075761 - 0.075761*I,   0.088388 - 0.088388*I,
+   0.088388 + 0.088388*I,  -0.075761 + 0.075761*I,  -0.063135 - 0.063135*I,   0.050508 - 0.050508*I,
+   0.037881 + 0.037881*I,  -0.025254 + 0.025254*I,  -0.012627 - 0.012627*I, 
+};
 
 #define APBUFFSZ (8196*PULSEW)
 
 static float ampbuff[APBUFFSZ+4];
 static uint32_t aidx = 0;
-
-static complex float v1={0};
-static complex float v2={0};
-static complex float v3={0};
-static complex float v4={0};
-static complex float sumval=0;
 
 extern void handlerExit(int sig);
 
@@ -49,45 +58,21 @@ static void decodeiq(const unsigned short *r, const int len)
 	int rlen;
 
 	for (int i = 0; i < len; ) {
-		complex float val;
-		int a,b;
+		complex float sumval;
+		float in;
+		int k,o;
 
-		a = (int)r[i]-0x800;i++;
-		b = (int)r[i]-0x800;i++;
-		val=(a+b)+(-a+b)*I;
+		// downsample by 2
+		in = (float)r[i]-0x800;i++;
+		fbuff[fidx%DSFLTLEN]=in;fidx++;
+		in = (float)r[i]-0x800;i++;
+		fbuff[fidx%DSFLTLEN]=in;fidx++;
 
-		sumval=sumval+val-v1;
-		v1 = val ; 
-
-		ampbuff[aidx]=creal(sumval)*creal(sumval)+cimag(sumval)*cimag(sumval);
-		aidx++;
-
-		a = (int)r[i]-0x800;i++;
-		b = (int)r[i]-0x800;i++;
-		val=-(a+b)+(a-b)*I;
-
-		sumval=sumval+val-v2;
-		v2 = val ; 
-
-		ampbuff[aidx]=creal(sumval)*creal(sumval)+cimag(sumval)*cimag(sumval);
-		aidx++;
-
-		a = (int)r[i]-0x800;i++;
-		b = (int)r[i]-0x800;i++;
-		val=(a+b)+(-a+b)*I;
-
-		sumval=sumval+val-v3;
-		v3 = val ; 
-
-		ampbuff[aidx]=creal(sumval)*creal(sumval)+cimag(sumval)*cimag(sumval);
-		aidx++;
-
-		a = (int)r[i]-0x800;i++;
-		b = (int)r[i]-0x800;i++;
-		val=-(a+b)+(a-b)*I;
-
-		sumval=sumval+val-v4;
-		v4 = val; 
+		// quadrature filter
+		sumval=0;
+		o=DSFLTLEN-fidx%DSFLTLEN;
+		for(k=0;k<DSFLTLEN;k++)
+			sumval+=dsfilter[k+o]*fbuff[k];
 
 		ampbuff[aidx]=creal(sumval)*creal(sumval)+cimag(sumval)*cimag(sumval);
 		aidx++;
@@ -99,10 +84,12 @@ static void decodeiq(const unsigned short *r, const int len)
 			aidx=aidx-rlen;
 		}	
 	}
+/*
 	rlen = deqframe(ampbuff, aidx);
 	if(rlen<aidx) 
 		memcpy(ampbuff,&(ampbuff[rlen]),(aidx-rlen)*sizeof(float));
 	aidx=aidx-rlen;
+*/
 }
 
 
