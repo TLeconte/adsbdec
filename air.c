@@ -24,7 +24,6 @@
 #include <fcntl.h>
 #include <time.h>
 #include <libairspy/airspy.h>
-#include <complex.h>
 #include "adsbdec.h"
 
 int gain = 18;
@@ -34,15 +33,25 @@ int gain = 18;
 static float fbuff[DSFLTLEN];
 static uint32_t fidx = 0;
 
-static const complex float dsfilter[2*DSFLTLEN]={
-   -0.012627 + 0.012627*I,  -0.025254 - 0.025254*I,   0.037881 - 0.037881*I,
-   0.050508 + 0.050508*I,  -0.063135 + 0.063135*I,  -0.075761 - 0.075761*I,   0.088388 - 0.088388*I,
-   0.088388 + 0.088388*I,  -0.075761 + 0.075761*I,  -0.063135 - 0.063135*I,   0.050508 - 0.050508*I,
-   0.037881 + 0.037881*I,  -0.025254 + 0.025254*I,  -0.012627 - 0.012627*I, 
-   -0.012627 + 0.012627*I,  -0.025254 - 0.025254*I,   0.037881 - 0.037881*I,
-   0.050508 + 0.050508*I,  -0.063135 + 0.063135*I,  -0.075761 - 0.075761*I,   0.088388 - 0.088388*I,
-   0.088388 + 0.088388*I,  -0.075761 + 0.075761*I,  -0.063135 - 0.063135*I,   0.050508 - 0.050508*I,
-   0.037881 + 0.037881*I,  -0.025254 + 0.025254*I,  -0.012627 - 0.012627*I, 
+static const float dsfilteri[2*DSFLTLEN]={
+   -0.012627,  -0.025254,   0.037881,
+   0.050508,  -0.063135,  -0.075761,   0.088388,
+   0.088388,  -0.075761,  -0.063135,   0.050508,
+   0.037881,  -0.025254,  -0.012627, 
+   -0.012627,  -0.025254,   0.037881,
+   0.050508,  -0.063135,  -0.075761,   0.088388,
+   0.088388,  -0.075761,  -0.063135,   0.050508,
+   0.037881,  -0.025254,  -0.012627 
+};
+static const float dsfilterq[2*DSFLTLEN]={
+   0.012627, - 0.025254, - 0.037881,
+   0.050508, 0.063135,  - 0.075761,  - 0.088388,
+   0.088388, 0.075761,  - 0.063135,  - 0.050508,
+   0.037881, 0.025254,  - 0.012627,
+   0.012627, - 0.025254, - 0.037881,
+   0.050508, 0.063135,  - 0.075761,  - 0.088388,
+   0.088388, 0.075761,  - 0.063135,  - 0.050508,
+   0.037881, 0.025254,  - 0.012627
 };
 
 #define APBUFFSZ (8196*PULSEW)
@@ -58,7 +67,7 @@ static void decodeiq(const unsigned short *r, const int len)
 	int rlen;
 
 	for (int i = 0; i < len; ) {
-		complex float sumval;
+		float sumvali,sumvalq;
 		float in;
 		int k,o;
 
@@ -69,12 +78,15 @@ static void decodeiq(const unsigned short *r, const int len)
 		fbuff[fidx%DSFLTLEN]=in;fidx++;
 
 		// quadrature filter
-		sumval=0;
+		sumvali=sumvalq=0;
 		o=DSFLTLEN-fidx%DSFLTLEN;
-		for(k=0;k<DSFLTLEN;k++)
-			sumval+=dsfilter[k+o]*fbuff[k];
+		for(k=0;k<DSFLTLEN;k++) {
+			float c=fbuff[k];
+			sumvali+=dsfilteri[k+o]*c;
+			sumvalq+=dsfilterq[k+o]*c;
+		}
 
-		ampbuff[aidx]=creal(sumval)*creal(sumval)+cimag(sumval)*cimag(sumval);
+		ampbuff[aidx]=sumvali*sumvali+sumvalq*sumvalq;
 		aidx++;
 
 		if(aidx>=APBUFFSZ) {
