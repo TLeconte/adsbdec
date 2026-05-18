@@ -33,25 +33,15 @@ int gain = 18;
 static float fbuff[DSFLTLEN];
 static uint32_t fidx = 0;
 
-static const float dsfilteri[2*DSFLTLEN]={
-   -0.012627,  -0.025254,   0.037881,
-   0.050508,  -0.063135,  -0.075761,   0.088388,
-   0.088388,  -0.075761,  -0.063135,   0.050508,
-   0.037881,  -0.025254,  -0.012627, 
-   -0.012627,  -0.025254,   0.037881,
-   0.050508,  -0.063135,  -0.075761,   0.088388,
-   0.088388,  -0.075761,  -0.063135,   0.050508,
-   0.037881,  -0.025254,  -0.012627 
-};
-static const float dsfilterq[2*DSFLTLEN]={
-   0.012627, - 0.025254, - 0.037881,
-   0.050508, 0.063135,  - 0.075761,  - 0.088388,
-   0.088388, 0.075761,  - 0.063135,  - 0.050508,
-   0.037881, 0.025254,  - 0.012627,
-   0.012627, - 0.025254, - 0.037881,
-   0.050508, 0.063135,  - 0.075761,  - 0.088388,
-   0.088388, 0.075761,  - 0.063135,  - 0.050508,
-   0.037881, 0.025254,  - 0.012627
+static const float dsfilter[2*DSFLTLEN]={
+  0.012627,  0.025254,   0.037881,
+  0.050508,  0.063135,  0.075761,   0.088388,
+  0.088388,  0.075761,  0.063135,   0.050508,
+  0.037881,  0.025254,  0.012627,
+  0.012627,  0.025254,   0.037881,
+  0.050508,  0.063135,  0.075761,   0.088388,
+  0.088388,  0.075761,  0.063135,   0.050508,
+  0.037881,  0.025254,  0.012627,
 };
 
 #define APBUFFSZ (8196*PULSEW)
@@ -71,19 +61,31 @@ static void decodeiq(const unsigned short *r, const int len)
 		float in;
 		int k,o;
 
-		// downsample by 2
 		in = (float)r[i]-0x800;i++;
 		fbuff[fidx%DSFLTLEN]=in;fidx++;
 		in = (float)r[i]-0x800;i++;
 		fbuff[fidx%DSFLTLEN]=in;fidx++;
 
-		// quadrature filter
 		sumvali=sumvalq=0;
 		o=DSFLTLEN-fidx%DSFLTLEN;
-		for(k=0;k<DSFLTLEN;k++) {
-			float c=fbuff[k];
-			sumvali+=dsfilteri[k+o]*c;
-			sumvalq+=dsfilterq[k+o]*c;
+		for(k=0;k<DSFLTLEN;) {
+			sumvali+=dsfilter[k+o]*fbuff[k];k++;
+			sumvalq+=dsfilter[k+o]*fbuff[k];k++;
+		}
+
+		ampbuff[aidx]=sumvali*sumvali+sumvalq*sumvalq;
+		aidx++;
+
+		in = (float)r[i]-0x800;i++;
+		fbuff[fidx%DSFLTLEN]=-in;fidx++;
+		in = (float)r[i]-0x800;i++;
+		fbuff[fidx%DSFLTLEN]=-in;fidx++;
+
+		sumvali=sumvalq=0;
+		o=DSFLTLEN-fidx%DSFLTLEN;
+		for(k=0;k<DSFLTLEN;) {
+			sumvali+=dsfilter[k+o]*fbuff[k];k++;
+			sumvalq+=dsfilter[k+o]*fbuff[k];k++;
 		}
 
 		ampbuff[aidx]=sumvali*sumvali+sumvalq*sumvalq;
@@ -96,12 +98,6 @@ static void decodeiq(const unsigned short *r, const int len)
 			aidx=aidx-rlen;
 		}	
 	}
-/*
-	rlen = deqframe(ampbuff, aidx);
-	if(rlen<aidx) 
-		memcpy(ampbuff,&(ampbuff[rlen]),(aidx-rlen)*sizeof(float));
-	aidx=aidx-rlen;
-*/
 }
 
 
